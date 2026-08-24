@@ -126,10 +126,9 @@
     </symbol>
     <symbol id="tile-7p" viewBox="0 0 72 100">
       <title>七筒</title><use href="#tile-shell"/>
-      <use href="#pin-red" transform="translate(36 21)"/>
-      <use href="#pin-green" transform="translate(22 41)"/><use href="#pin-green" transform="translate(50 41)"/>
-      <use href="#pin-blue" transform="translate(22 62)"/><use href="#pin-blue" transform="translate(50 62)"/>
-      <use href="#pin-blue" transform="translate(22 81)"/><use href="#pin-blue" transform="translate(50 81)"/>
+      <use href="#pin-green" transform="translate(19 27)"/><use href="#pin-green" transform="translate(53 27)"/>
+      <use href="#pin-blue" transform="translate(19 50)"/><use href="#pin-red" transform="translate(36 50)"/><use href="#pin-blue" transform="translate(53 50)"/>
+      <use href="#pin-blue" transform="translate(19 73)"/><use href="#pin-blue" transform="translate(53 73)"/>
     </symbol>
     <symbol id="tile-8p" viewBox="0 0 72 100">
       <title>八筒</title><use href="#tile-shell"/>
@@ -187,10 +186,9 @@
     </symbol>
     <symbol id="tile-7s" viewBox="0 0 72 100">
       <title>七索</title><use href="#tile-shell"/>
-      <use href="#bamboo-red" transform="translate(36 19)"/>
-      <use href="#bamboo-green" transform="translate(22 41)"/><use href="#bamboo-green" transform="translate(50 41)"/>
-      <use href="#bamboo-green" transform="translate(22 62)"/><use href="#bamboo-green" transform="translate(50 62)"/>
-      <use href="#bamboo-green" transform="translate(22 81)"/><use href="#bamboo-green" transform="translate(50 81)"/>
+      <use href="#bamboo-green" transform="translate(22 27)"/><use href="#bamboo-green" transform="translate(50 27)"/>
+      <use href="#bamboo-green" transform="translate(22 50)"/><use href="#bamboo-red" transform="translate(36 50)"/><use href="#bamboo-green" transform="translate(50 50)"/>
+      <use href="#bamboo-green" transform="translate(22 73)"/><use href="#bamboo-green" transform="translate(50 73)"/>
     </symbol>
     <symbol id="tile-8s" viewBox="0 0 72 100">
       <title>八索</title><use href="#tile-shell"/>
