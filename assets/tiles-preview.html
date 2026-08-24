@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>cjong4-web 牌画像プレビュー</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #102b24;
+      color: #f5f1e6;
+    }
+    body { max-width: 1080px; margin: 0 auto; padding: 32px 24px 56px; }
+    h1 { margin: 0 0 8px; font-size: 1.5rem; }
+    h2 { margin: 32px 0 12px; color: #d6cda9; font-size: 1rem; }
+    p { margin: 0; color: #aebdb5; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 14px 10px; }
+    figure { display: grid; justify-items: center; gap: 5px; margin: 0; }
+    .tile { width: 72px; height: 100px; }
+    figcaption { color: #b8c6bf; font: 12px ui-monospace, SFMono-Regular, monospace; }
+  </style>
+</head>
+<body>
+  <h1>cjong4-web 牌画像</h1>
+  <p>SVG sprite / 72 × 100 viewBox</p>
+
+  <h2>萬子</h2>
+  <div class="tiles">
+    <figure><svg class="tile" aria-label="一萬"><use href="./tiles.svg#tile-1m"/></svg><figcaption>1m</figcaption></figure>
+    <figure><svg class="tile" aria-label="二萬"><use href="./tiles.svg#tile-2m"/></svg><figcaption>2m</figcaption></figure>
+    <figure><svg class="tile" aria-label="三萬"><use href="./tiles.svg#tile-3m"/></svg><figcaption>3m</figcaption></figure>
+    <figure><svg class="tile" aria-label="四萬"><use href="./tiles.svg#tile-4m"/></svg><figcaption>4m</figcaption></figure>
+    <figure><svg class="tile" aria-label="五萬"><use href="./tiles.svg#tile-5m"/></svg><figcaption>5m</figcaption></figure>
+    <figure><svg class="tile" aria-label="六萬"><use href="./tiles.svg#tile-6m"/></svg><figcaption>6m</figcaption></figure>
+    <figure><svg class="tile" aria-label="七萬"><use href="./tiles.svg#tile-7m"/></svg><figcaption>7m</figcaption></figure>
+    <figure><svg class="tile" aria-label="八萬"><use href="./tiles.svg#tile-8m"/></svg><figcaption>8m</figcaption></figure>
+    <figure><svg class="tile" aria-label="九萬"><use href="./tiles.svg#tile-9m"/></svg><figcaption>9m</figcaption></figure>
+    <figure><svg class="tile" aria-label="赤五萬"><use href="./tiles.svg#tile-0m"/></svg><figcaption>0m</figcaption></figure>
+  </div>
+
+  <h2>筒子</h2>
+  <div class="tiles">
+    <figure><svg class="tile" aria-label="一筒"><use href="./tiles.svg#tile-1p"/></svg><figcaption>1p</figcaption></figure>
+    <figure><svg class="tile" aria-label="二筒"><use href="./tiles.svg#tile-2p"/></svg><figcaption>2p</figcaption></figure>
+    <figure><svg class="tile" aria-label="三筒"><use href="./tiles.svg#tile-3p"/></svg><figcaption>3p</figcaption></figure>
+    <figure><svg class="tile" aria-label="四筒"><use href="./tiles.svg#tile-4p"/></svg><figcaption>4p</figcaption></figure>
+    <figure><svg class="tile" aria-label="五筒"><use href="./tiles.svg#tile-5p"/></svg><figcaption>5p</figcaption></figure>
+    <figure><svg class="tile" aria-label="六筒"><use href="./tiles.svg#tile-6p"/></svg><figcaption>6p</figcaption></figure>
+    <figure><svg class="tile" aria-label="七筒"><use href="./tiles.svg#tile-7p"/></svg><figcaption>7p</figcaption></figure>
+    <figure><svg class="tile" aria-label="八筒"><use href="./tiles.svg#tile-8p"/></svg><figcaption>8p</figcaption></figure>
+    <figure><svg class="tile" aria-label="九筒"><use href="./tiles.svg#tile-9p"/></svg><figcaption>9p</figcaption></figure>
+    <figure><svg class="tile" aria-label="赤五筒"><use href="./tiles.svg#tile-0p"/></svg><figcaption>0p</figcaption></figure>
+  </div>
+
+  <h2>索子</h2>
+  <div class="tiles">
+    <figure><svg class="tile" aria-label="一索"><use href="./tiles.svg#tile-1s"/></svg><figcaption>1s</figcaption></figure>
+    <figure><svg class="tile" aria-label="二索"><use href="./tiles.svg#tile-2s"/></svg><figcaption>2s</figcaption></figure>
+    <figure><svg class="tile" aria-label="三索"><use href="./tiles.svg#tile-3s"/></svg><figcaption>3s</figcaption></figure>
+    <figure><svg class="tile" aria-label="四索"><use href="./tiles.svg#tile-4s"/></svg><figcaption>4s</figcaption></figure>
+    <figure><svg class="tile" aria-label="五索"><use href="./tiles.svg#tile-5s"/></svg><figcaption>5s</figcaption></figure>
+    <figure><svg class="tile" aria-label="六索"><use href="./tiles.svg#tile-6s"/></svg><figcaption>6s</figcaption></figure>
+    <figure><svg class="tile" aria-label="七索"><use href="./tiles.svg#tile-7s"/></svg><figcaption>7s</figcaption></figure>
+    <figure><svg class="tile" aria-label="八索"><use href="./tiles.svg#tile-8s"/></svg><figcaption>8s</figcaption></figure>
+    <figure><svg class="tile" aria-label="九索"><use href="./tiles.svg#tile-9s"/></svg><figcaption>9s</figcaption></figure>
+    <figure><svg class="tile" aria-label="赤五索"><use href="./tiles.svg#tile-0s"/></svg><figcaption>0s</figcaption></figure>
+  </div>
+
+  <h2>字牌・裏面</h2>
+  <div class="tiles">
+    <figure><svg class="tile" aria-label="東"><use href="./tiles.svg#tile-1z"/></svg><figcaption>1z</figcaption></figure>
+    <figure><svg class="tile" aria-label="南"><use href="./tiles.svg#tile-2z"/></svg><figcaption>2z</figcaption></figure>
+    <figure><svg class="tile" aria-label="西"><use href="./tiles.svg#tile-3z"/></svg><figcaption>3z</figcaption></figure>
+    <figure><svg class="tile" aria-label="北"><use href="./tiles.svg#tile-4z"/></svg><figcaption>4z</figcaption></figure>
+    <figure><svg class="tile" aria-label="白"><use href="./tiles.svg#tile-5z"/></svg><figcaption>5z</figcaption></figure>
+    <figure><svg class="tile" aria-label="發"><use href="./tiles.svg#tile-6z"/></svg><figcaption>6z</figcaption></figure>
+    <figure><svg class="tile" aria-label="中"><use href="./tiles.svg#tile-7z"/></svg><figcaption>7z</figcaption></figure>
+    <figure><svg class="tile" aria-label="牌の裏面"><use href="./tiles.svg#tile-back"/></svg><figcaption>back</figcaption></figure>
+  </div>
+</body>
+</html>
