@@ -3,3 +3,7 @@
 
 # macOS metadata
 .DS_Store
+
+# Local build output
+/build/
+/build-*/

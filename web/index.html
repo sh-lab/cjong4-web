@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>cjong4-web</title>
+    <meta name="description" content="ブラウザで動作する4人打ち麻雀と視覚的デバッグ環境">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">cjong4 / WebAssembly</p>
+        <h1>4人打ち麻雀</h1>
+      </div>
+      <div id="engine-status" class="status" data-state="loading" role="status">
+        Wasmを読み込み中
+      </div>
+    </header>
+
+    <main>
+      <section class="control-panel" aria-labelledby="game-settings-title">
+        <details class="rules-accordion">
+          <summary>
+            <span id="game-settings-title" class="rules-title">対局設定</span>
+            <span id="rule-summary" class="rules-summary">読み込み中</span>
+          </summary>
+          <div class="rules-body">
+            <label class="wall-setting" for="wall-mode">
+              <span>
+                <strong>山の設定</strong>
+                <small>プリセットの構成は今後追加します。</small>
+              </span>
+              <select id="wall-mode">
+                <option value="random" selected>ランダム</option>
+                <option value="preset">プリセット（デバッグ用）</option>
+              </select>
+            </label>
+            <div class="rules-toolbar">
+              <p>各項目を個別に変更できます。</p>
+              <button id="reset-rules" class="secondary-button" type="button" disabled>
+                デフォルトに戻す
+              </button>
+            </div>
+            <div id="rule-sections" class="rule-sections" aria-label="対局設定項目"></div>
+          </div>
+        </details>
+
+        <div class="game-start-row">
+          <button id="start-game" type="button" disabled>対局開始</button>
+        </div>
+      </section>
+
+      <section class="round-bar" aria-label="局情報">
+        <strong>東1局</strong>
+        <span>0本場</span>
+        <span>供託 0</span>
+        <span>残り 70枚</span>
+        <span class="round-note">画面骨格・Wasm接続確認</span>
+      </section>
+
+      <section id="players" class="players" aria-label="プレイヤー一覧"></section>
+
+      <section class="timeline" aria-labelledby="timeline-title">
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">History</p>
+            <h2 id="timeline-title">対局履歴</h2>
+          </div>
+          <div class="history-actions" aria-label="対局履歴の操作">
+            <output for="history-position">開始前</output>
+            <button type="button" disabled>一手進める</button>
+            <button type="button" disabled>一時停止</button>
+            <button type="button" disabled>再生</button>
+          </div>
+        </div>
+        <input id="history-position" type="range" min="0" max="0" value="0" disabled>
+      </section>
+
+      <details class="debug-panel">
+        <summary>デバッグ情報</summary>
+        <div class="debug-grid">
+          <div><span>API version</span><strong id="api-version">—</strong></div>
+          <div><span>Schema version</span><strong id="schema-version">—</strong></div>
+          <div><span>Engine</span><strong id="engine-ready">—</strong></div>
+        </div>
+        <pre id="raw-bootstrap" aria-label="Wasm bootstrap JSON">Wasmを読み込み中</pre>
+      </details>
+    </main>
+
+    <footer>
+      音・アニメーションなし / 原典MJAI対応予定 / Riichi Lab拡張は未対応
+    </footer>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
