@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="light">
     <title>cjong4-web</title>
     <meta name="description" content="ブラウザで動作する4人打ち麻雀と視覚的デバッグ環境">
-    <link rel="stylesheet" href="./styles.css?v=12">
+    <link rel="stylesheet" href="./styles.css?v=13">
   </head>
   <body>
     <header class="app-header">
@@ -70,6 +70,28 @@
         <div id="action-buttons" class="action-buttons"></div>
       </section>
 
+      <div id="settlement-layer" class="settlement-layer" hidden>
+        <section class="settlement-panel" role="dialog" aria-modal="true" aria-labelledby="settlement-title">
+          <header class="settlement-header">
+            <div>
+              <p class="eyebrow">Round result</p>
+              <h2 id="settlement-title">局終了</h2>
+              <p id="settlement-summary" class="settlement-summary"></p>
+            </div>
+            <button id="settlement-close" class="secondary-button" type="button">閉じる</button>
+          </header>
+          <div id="settlement-winners" class="settlement-winners"></div>
+          <div>
+            <h3 class="settlement-score-title">点数移動</h3>
+            <div id="settlement-score-changes" class="settlement-score-changes"></div>
+            <p class="settlement-note">本場・供託を含む清算後の点数です。</p>
+          </div>
+          <div class="settlement-actions">
+            <button id="settlement-next" type="button">次へ進める</button>
+          </div>
+        </section>
+      </div>
+
       <section id="players" class="players" aria-label="プレイヤー一覧"></section>
 
       <section class="timeline" aria-labelledby="timeline-title">
@@ -102,6 +124,6 @@
     <footer>
       音・アニメーションなし / 原典MJAI対応予定 / Riichi Lab拡張は未対応
     </footer>
-    <script type="module" src="./app.js?v=12"></script>
+    <script type="module" src="./app.js?v=13"></script>
   </body>
 </html>

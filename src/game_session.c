@@ -101,6 +101,24 @@ static const char *const cj4_web_action_names[] = {
 static const char *const cj4_web_meld_names[] = {
     "chi", "pon", "minkan", "ankan", "kakan"};
 
+static const char *const cj4_web_round_end_names[] = {
+    "none", "tsumo", "ron", "exhaustive_draw", "abortive_draw"};
+
+static const char *const cj4_web_abortive_draw_names[] = {
+    "none", "kyuushu_kyuuhai", "suufon_renda", "four_riichi",
+    "four_kans", "triple_ron"};
+
+static const char *const cj4_web_yaku_names[] = {
+    "riichi", "double_riichi", "ippatsu", "menzen_tsumo", "tanyao",
+    "yakuhai_haku", "yakuhai_hatsu", "yakuhai_chun", "yakuhai_seat_wind",
+    "yakuhai_round_wind", "chiitoi", "kokushi", "kokushi_13_wait", "toitoi",
+    "honroutou", "honitsu", "chinitsu", "pinfu", "iipeikou", "ryanpeikou",
+    "sanshoku_doujun", "ittsuu", "chanta", "junchan", "sanankou",
+    "shousangen", "daisangen", "shousuushii", "daisuushii", "tsuuiisou",
+    "ryuuiisou", "chinroutou", "sankantsu", "suukantsu", "sanshoku_doukou",
+    "suuankou", "suuankou_tanki", "chuuren", "junsei_chuuren", "rinshan",
+    "haitei", "houtei", "chankan", "tenhou", "chiihou", "nagashi_mangan"};
+
 static void
 cj4_web_json_append(cj4_web_json_writer *writer, const char *format, ...)
 {
@@ -553,6 +571,146 @@ cj4_web_write_action(cj4_web_json_writer *writer, uint8_t index, const cj4_actio
 }
 
 static void
+cj4_web_write_tile_array(
+    cj4_web_json_writer *writer,
+    const cj4_tile_id *tiles,
+    uint8_t count)
+{
+    cj4_web_json_append(writer, "[");
+    for (uint8_t index = 0; index < count; ++index)
+    {
+        if (index)
+            cj4_web_json_append(writer, ",");
+        cj4_web_write_tile(writer, tiles[index]);
+    }
+    cj4_web_json_append(writer, "]");
+}
+
+static void
+cj4_web_write_settlement(cj4_web_json_writer *writer)
+{
+    const cj4_mahjong *state = &cj4_web_game.state;
+    cj4_phase phase = cj4_state_phase(state);
+    cj4_round_end_type type = cj4_state_round_end_type(state);
+    cj4_abortive_draw_reason abortive_reason = cj4_state_abortive_reason(state);
+    cj4_win_result results[CJ4_PLAYER_COUNT];
+    uint8_t result_count = 0;
+    cj4_mahjong settled;
+
+    if (phase != CJ4_PHASE_ROUND_END ||
+        type <= CJ4_ROUND_END_NONE || type > CJ4_ROUND_END_ABORTIVE_DRAW)
+    {
+        cj4_web_json_append(writer, "null");
+        return;
+    }
+
+    settled = cj4_do_settle(*state, &cj4_web_game.rules);
+    (void)cj4_collect_winning_results(
+        state,
+        &cj4_web_game.rules,
+        results,
+        CJ4_PLAYER_COUNT,
+        &result_count);
+
+    cj4_web_json_append(
+        writer,
+        "{\"type\":\"%s\",\"abortive_reason\":",
+        cj4_web_round_end_names[type]);
+    if (type == CJ4_ROUND_END_ABORTIVE_DRAW &&
+        abortive_reason > CJ4_ABORTIVE_DRAW_NONE &&
+        abortive_reason <= CJ4_ABORTIVE_DRAW_TRIPLE_RON)
+    {
+        cj4_web_json_append(
+            writer,
+            "\"%s\"",
+            cj4_web_abortive_draw_names[abortive_reason]);
+    }
+    else
+    {
+        cj4_web_json_append(writer, "null");
+    }
+
+    cj4_web_json_append(writer, ",\"discarder\":");
+    if (type == CJ4_ROUND_END_RON)
+        cj4_web_json_append(writer, "%u", (unsigned)cj4_state_current_player(state));
+    else
+        cj4_web_json_append(writer, "null");
+
+    cj4_web_json_append(writer, ",\"winning_tile\":");
+    if (cj4_tile_id_is_valid(state->winning_tile))
+        cj4_web_write_tile(writer, state->winning_tile);
+    else
+        cj4_web_json_append(writer, "null");
+
+    cj4_web_json_append(writer, ",\"score_deltas\":[");
+    for (cj4_player player = 0; player < CJ4_PLAYER_COUNT; ++player)
+    {
+        if (player)
+            cj4_web_json_append(writer, ",");
+        cj4_web_json_append(
+            writer,
+            "%d",
+            (int)(settled.scores[player] - state->scores[player]));
+    }
+    cj4_web_json_append(writer, "],\"scores_after\":[");
+    for (cj4_player player = 0; player < CJ4_PLAYER_COUNT; ++player)
+    {
+        if (player)
+            cj4_web_json_append(writer, ",");
+        cj4_web_json_append(writer, "%d", (int)settled.scores[player]);
+    }
+
+    cj4_web_json_append(writer, "],\"winners\":[");
+    for (uint8_t index = 0; index < result_count; ++index)
+    {
+        const cj4_win_result *result = &results[index];
+        if (index)
+            cj4_web_json_append(writer, ",");
+        cj4_web_json_append(
+            writer,
+            "{\"player\":%u,\"han\":%u,\"fu\":%u,\"yakuman_count\":%u,"
+            "\"ron_points\":%d,\"tsumo_dealer_payment\":%d,"
+            "\"tsumo_non_dealer_payment\":%d,\"dora_count\":%u,"
+            "\"ura_dora_count\":%u,\"aka_dora_count\":%u,"
+            "\"dora_indicators\":",
+            (unsigned)result->player,
+            (unsigned)result->han,
+            (unsigned)result->fu,
+            (unsigned)result->yakuman_count,
+            (int)result->ron_points,
+            (int)result->tsumo_dealer_payment,
+            (int)result->tsumo_non_dealer_payment,
+            (unsigned)result->dora_count,
+            (unsigned)result->ura_dora_count,
+            (unsigned)result->aka_dora_count);
+        cj4_web_write_tile_array(
+            writer,
+            result->dora_indicators,
+            result->dora_indicators_count);
+        cj4_web_json_append(writer, ",\"ura_dora_indicators\":");
+        cj4_web_write_tile_array(
+            writer,
+            result->ura_dora_indicators,
+            result->ura_dora_indicators_count);
+        cj4_web_json_append(writer, ",\"yaku\":[");
+        for (uint8_t yaku_index = 0; yaku_index < result->yaku_count; ++yaku_index)
+        {
+            unsigned yaku = (unsigned)result->yaku[yaku_index];
+            if (yaku_index)
+                cj4_web_json_append(writer, ",");
+            cj4_web_json_append(
+                writer,
+                "\"%s\"",
+                yaku < sizeof(cj4_web_yaku_names) / sizeof(cj4_web_yaku_names[0])
+                    ? cj4_web_yaku_names[yaku]
+                    : "unknown");
+        }
+        cj4_web_json_append(writer, "]}");
+    }
+    cj4_web_json_append(writer, "]}");
+}
+
+static void
 cj4_web_set_red_count(cj4_tile_type type, int32_t value)
 {
     if (value < 0)
@@ -806,7 +964,7 @@ cj4_web_state_json(void)
         (void)snprintf(
             cj4_web_state_json_buffer,
             sizeof(cj4_web_state_json_buffer),
-            "{\"schema_version\":2,\"active\":false}");
+            "{\"schema_version\":3,\"active\":false}");
         return cj4_web_state_json_buffer;
     }
 
@@ -819,7 +977,7 @@ cj4_web_state_json(void)
 
     cj4_web_json_append(
         &writer,
-        "{\"schema_version\":2,\"active\":true,\"generation\":%u,"
+        "{\"schema_version\":3,\"active\":true,\"generation\":%u,"
         "\"seed\":%u,\"wall_mode\":%u,\"phase\":\"%s\","
         "\"current_player\":%u,\"dealer\":%u,\"round_wind\":%u,"
         "\"honba\":%u,\"riichi_sticks\":%u,\"remaining\":%u,"
@@ -890,12 +1048,14 @@ cj4_web_state_json(void)
             cj4_web_json_append(&writer, ",");
         cj4_web_write_action(&writer, index, &cj4_web_game.pending_actions[index]);
     }
-    cj4_web_json_append(&writer, "]}");
+    cj4_web_json_append(&writer, "],\"settlement\":");
+    cj4_web_write_settlement(&writer);
+    cj4_web_json_append(&writer, "}");
 
     if (!writer.valid)
         (void)snprintf(
             cj4_web_state_json_buffer,
             sizeof(cj4_web_state_json_buffer),
-            "{\"schema_version\":2,\"active\":false,\"error\":\"snapshot_too_large\"}");
+            "{\"schema_version\":3,\"active\":false,\"error\":\"snapshot_too_large\"}");
     return cj4_web_state_json_buffer;
 }

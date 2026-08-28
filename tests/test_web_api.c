@@ -36,7 +36,7 @@ main(void)
                CJ4_WEB_CONTROLLER_TOITOI) == 1);
 
     json = cj4_web_state_json();
-    assert(strstr(json, "\"schema_version\":2") != NULL);
+    assert(strstr(json, "\"schema_version\":3") != NULL);
     assert(strstr(json, "\"active\":true") != NULL);
     assert(strstr(json, "\"seed\":12345") != NULL);
     assert(strstr(json, "\"history\":{\"index\":0,\"count\":1}") != NULL);
@@ -53,12 +53,35 @@ main(void)
         assert(second_id == NULL || second_id > dora_end);
     }
 
-    for (; steps < 12000; ++steps)
     {
-        json = cj4_web_state_json();
-        if (strstr(json, "\"phase\":\"game_end\"") != NULL)
-            break;
-        assert(cj4_web_game_step() == 1);
+        int saw_round_settlement = 0;
+        int saw_winning_settlement = 0;
+
+        for (; steps < 12000; ++steps)
+        {
+            json = cj4_web_state_json();
+            if (strstr(json, "\"phase\":\"game_end\"") != NULL)
+                break;
+            if (strstr(json, "\"phase\":\"round_end\"") != NULL)
+            {
+                saw_round_settlement = 1;
+                assert(strstr(json, "\"settlement\":{") != NULL);
+                assert(strstr(json, "\"score_deltas\":[") != NULL);
+                assert(strstr(json, "\"scores_after\":[") != NULL);
+                if (strstr(json, "\"type\":\"tsumo\"") != NULL ||
+                    strstr(json, "\"type\":\"ron\"") != NULL)
+                {
+                    saw_winning_settlement = 1;
+                    assert(strstr(json, "\"winners\":[{") != NULL);
+                    assert(strstr(json, "\"han\":") != NULL);
+                    assert(strstr(json, "\"fu\":") != NULL);
+                    assert(strstr(json, "\"yaku\":[\"") != NULL);
+                }
+            }
+            assert(cj4_web_game_step() == 1);
+        }
+        assert(saw_round_settlement);
+        assert(saw_winning_settlement);
     }
     assert(steps < 12000);
     assert(strstr(cj4_web_state_json(), "\"phase\":\"game_end\"") != NULL);

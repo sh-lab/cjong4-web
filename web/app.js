@@ -1,4 +1,4 @@
-import createCjong4WebModule from "./cjong4-web.js?v=12";
+import createCjong4WebModule from "./cjong4-web.js?v=13";
 
 const WINDS = ["東", "南", "西", "北"];
 const RULE_GROUPS = [
@@ -138,10 +138,41 @@ const PHASE_LABELS = Object.freeze({
   settle: "精算",
   game_end: "対局終了",
 });
+const ROUND_RESULT_LABELS = Object.freeze({
+  tsumo: "ツモ和了",
+  ron: "ロン和了",
+  exhaustive_draw: "流局",
+  abortive_draw: "途中流局",
+});
+const ABORTIVE_DRAW_LABELS = Object.freeze({
+  kyuushu_kyuuhai: "九種九牌",
+  suufon_renda: "四風連打",
+  four_riichi: "四家立直",
+  four_kans: "四開槓",
+  triple_ron: "三家和",
+});
+const YAKU_LABELS = Object.freeze({
+  riichi: "立直", double_riichi: "ダブル立直", ippatsu: "一発",
+  menzen_tsumo: "門前清自摸和", tanyao: "断么九", yakuhai_haku: "役牌 白",
+  yakuhai_hatsu: "役牌 發", yakuhai_chun: "役牌 中", yakuhai_seat_wind: "自風牌",
+  yakuhai_round_wind: "場風牌", chiitoi: "七対子", kokushi: "国士無双",
+  kokushi_13_wait: "国士無双十三面待ち", toitoi: "対々和", honroutou: "混老頭",
+  honitsu: "混一色", chinitsu: "清一色", pinfu: "平和", iipeikou: "一盃口",
+  ryanpeikou: "二盃口", sanshoku_doujun: "三色同順", ittsuu: "一気通貫",
+  chanta: "混全帯么九", junchan: "純全帯么九", sanankou: "三暗刻",
+  shousangen: "小三元", daisangen: "大三元", shousuushii: "小四喜",
+  daisuushii: "大四喜", tsuuiisou: "字一色", ryuuiisou: "緑一色",
+  chinroutou: "清老頭", sankantsu: "三槓子", suukantsu: "四槓子",
+  sanshoku_doukou: "三色同刻", suuankou: "四暗刻", suuankou_tanki: "四暗刻単騎",
+  chuuren: "九蓮宝燈", junsei_chuuren: "純正九蓮宝燈", rinshan: "嶺上開花",
+  haitei: "海底摸月", houtei: "河底撈魚", chankan: "槍槓", tenhou: "天和",
+  chiihou: "地和", nagashi_mangan: "流し満貫",
+});
 
 let wasmModule;
 let currentState;
 let playbackTimer;
+let dismissedSettlementHistory = -1;
 
 function createTile(tile, label, options = {}) {
   const id = typeof tile === "string" ? tile : tile.tile;
@@ -348,10 +379,11 @@ function advanceForcedState() {
 
     const controller = currentState.players[currentState.current_player].controller;
     const resolvesReaction = ["discard", "kakan_resolve", "ankan_resolve"].includes(currentState.phase);
+    const resolvesSettlement = currentState.phase === "settle";
     const isTurnPhase = ["draw", "after_call"].includes(currentState.phase);
     const handlesTurn = isTurnPhase && controller !== CONTROLLER_IDS.human;
     const preparesHumanTurn = isTurnPhase && controller === CONTROLLER_IDS.human;
-    if (!resolvesReaction && !handlesTurn && !preparesHumanTurn) return;
+    if (!resolvesReaction && !resolvesSettlement && !handlesTurn && !preparesHumanTurn) return;
 
     const result = wasmModule._cj4_web_game_step();
     currentState = readState();
@@ -444,6 +476,102 @@ function renderPlayer(player) {
   });
 }
 
+function settlementPaymentText(result, settlement) {
+  if (settlement.type === "ron") return `${result.ron_points}点`;
+  if (result.player === currentState.dealer) {
+    return `${result.tsumo_non_dealer_payment}点オール`;
+  }
+  return `${result.tsumo_non_dealer_payment} / ${result.tsumo_dealer_payment}点`;
+}
+
+function renderSettlementWinner(result, settlement) {
+  const card = document.createElement("article");
+  const heading = document.createElement("div");
+  const identity = document.createElement("div");
+  const title = document.createElement("h3");
+  const detail = document.createElement("p");
+  const payment = document.createElement("strong");
+  const yaku = document.createElement("div");
+
+  card.className = "settlement-winner";
+  heading.className = "settlement-winner-heading";
+  title.textContent = `プレイヤー${result.player + 1}`;
+  detail.textContent = result.yakuman_count
+    ? `${result.yakuman_count === 1 ? "役満" : `${result.yakuman_count}倍役満`}`
+    : `${result.fu}符 ${result.han}翻`;
+  payment.className = "settlement-payment";
+  payment.textContent = settlementPaymentText(result, settlement);
+  yaku.className = "settlement-yaku";
+
+  result.yaku.forEach((name) => {
+    const tag = document.createElement("span");
+    tag.textContent = YAKU_LABELS[name] ?? name;
+    yaku.append(tag);
+  });
+  [
+    ["ドラ", result.dora_count],
+    ["裏ドラ", result.ura_dora_count],
+    ["赤ドラ", result.aka_dora_count],
+  ].forEach(([label, count]) => {
+    if (!count) return;
+    const tag = document.createElement("span");
+    tag.textContent = `${label} ${count}`;
+    yaku.append(tag);
+  });
+
+  identity.append(title, detail);
+  heading.append(identity);
+  if (currentState.settlement.winning_tile) {
+    heading.append(createTile(
+      currentState.settlement.winning_tile,
+      `和了牌 ${currentState.settlement.winning_tile.tile}`,
+    ));
+  }
+  card.append(heading, payment, yaku);
+  return card;
+}
+
+function renderSettlement() {
+  const layer = document.querySelector("#settlement-layer");
+  const settlement = currentState.settlement;
+  const historyIndex = currentState.history.index;
+
+  if (currentState.phase !== "round_end" || !settlement || dismissedSettlementHistory === historyIndex) {
+    layer.hidden = true;
+    return;
+  }
+
+  layer.hidden = false;
+  document.querySelector("#settlement-title").textContent = ROUND_RESULT_LABELS[settlement.type] ?? "局終了";
+  const summary = document.querySelector("#settlement-summary");
+  if (settlement.type === "ron") {
+    summary.textContent = `放銃: プレイヤー${settlement.discarder + 1}`;
+  } else if (settlement.type === "abortive_draw") {
+    summary.textContent = ABORTIVE_DRAW_LABELS[settlement.abortive_reason] ?? "途中流局";
+  } else if (settlement.type === "exhaustive_draw" && settlement.winners.length === 0) {
+    summary.textContent = "荒牌平局";
+  } else {
+    summary.textContent = settlement.winners.map((winner) => `プレイヤー${winner.player + 1}`).join("・");
+  }
+
+  const winners = document.querySelector("#settlement-winners");
+  winners.replaceChildren();
+  settlement.winners.forEach((winner) => winners.append(renderSettlementWinner(winner, settlement)));
+
+  const scoreChanges = document.querySelector("#settlement-score-changes");
+  scoreChanges.replaceChildren();
+  currentState.players.forEach((player) => {
+    const delta = settlement.score_deltas[player.player];
+    const item = document.createElement("div");
+    const label = document.createElement("span");
+    const score = document.createElement("strong");
+    label.textContent = `P${player.player + 1}`;
+    score.textContent = `${player.score} → ${settlement.scores_after[player.player]} (${delta > 0 ? "+" : ""}${delta})`;
+    item.append(label, score);
+    scoreChanges.append(item);
+  });
+}
+
 function updateHistoryControls() {
   const history = currentState.history;
   const range = document.querySelector("#history-position");
@@ -482,6 +610,7 @@ function renderGameState() {
 
   currentState.players.forEach(renderPlayer);
   renderPendingActions();
+  renderSettlement();
   updateHistoryControls();
 
   document.querySelector("#schema-version").textContent = currentState.schema_version;
@@ -496,7 +625,8 @@ function stepGame() {
   const result = wasmModule._cj4_web_game_step();
   currentState = readState();
   if (result === 1) advanceForcedState();
-  if (result !== 1 || currentState.waiting_for_input || currentState.phase === "game_end") stopPlayback();
+  if (result !== 1 || currentState.waiting_for_input ||
+      currentState.phase === "round_end" || currentState.phase === "game_end") stopPlayback();
   renderGameState();
   return result;
 }
@@ -509,6 +639,7 @@ function playGame() {
 
 function startGame() {
   stopPlayback();
+  dismissedSettlementHistory = -1;
   configureRules();
   const controllers = getSelectedControllers();
   const seed = Date.now() >>> 0;
@@ -526,6 +657,7 @@ function startGame() {
 function rewindGame(historyIndex) {
   stopPlayback();
   if (!wasmModule._cj4_web_game_rewind(Number(historyIndex))) return;
+  dismissedSettlementHistory = -1;
   currentState = readState();
   renderGameState();
 }
@@ -568,6 +700,14 @@ function wireGameControls() {
   document.querySelector("#play-game").addEventListener("click", playGame);
   document.querySelector("#history-position").addEventListener("input", (event) => rewindGame(event.target.value));
   document.querySelector("#hide-opponent-hands").addEventListener("change", renderGameState);
+  document.querySelector("#settlement-close").addEventListener("click", () => {
+    dismissedSettlementHistory = currentState?.history.index ?? -1;
+    document.querySelector("#settlement-layer").hidden = true;
+  });
+  document.querySelector("#settlement-next").addEventListener("click", () => {
+    dismissedSettlementHistory = currentState?.history.index ?? -1;
+    stepGame();
+  });
 }
 
 function showFailure(error, message = "Wasmの読み込みに失敗") {
@@ -580,7 +720,7 @@ function showFailure(error, message = "Wasmの読み込みに失敗") {
 async function main() {
   try {
     wasmModule = await createCjong4WebModule({
-      locateFile: (path) => path.endsWith(".wasm") ? `${path}?v=12` : path,
+      locateFile: (path) => path.endsWith(".wasm") ? `${path}?v=13` : path,
     });
     const pointer = wasmModule._cj4_web_bootstrap_json();
     const raw = wasmModule.UTF8ToString(pointer);

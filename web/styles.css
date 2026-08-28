@@ -415,6 +415,124 @@ main {
   height: 43px;
 }
 
+.settlement-layer {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  padding: 20px;
+  place-items: center;
+  background: rgb(23 33 28 / 72%);
+}
+
+.settlement-layer[hidden] {
+  display: none;
+}
+
+.settlement-panel {
+  width: min(780px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  padding: 20px;
+  border: 3px solid var(--green-900);
+  background: #fff;
+}
+
+.settlement-header,
+.settlement-winner-heading,
+.settlement-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settlement-header h2,
+.settlement-winner h3,
+.settlement-score-title {
+  margin: 0;
+}
+
+.settlement-summary,
+.settlement-winner p,
+.settlement-note {
+  margin: 3px 0 0;
+  color: var(--ink-soft);
+}
+
+.settlement-winners {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.settlement-winner {
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.settlement-winner-heading .tile {
+  width: 34px;
+  height: 47px;
+}
+
+.settlement-payment {
+  display: block;
+  margin-top: 8px;
+  color: var(--red);
+  font-size: 1.15rem;
+}
+
+.settlement-yaku {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.settlement-yaku span {
+  padding: 3px 7px;
+  background: var(--green-100);
+  color: var(--green-900);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.settlement-score-title {
+  margin-top: 16px;
+  font-size: 0.92rem;
+}
+
+.settlement-score-changes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 7px;
+}
+
+.settlement-score-changes div {
+  display: grid;
+  gap: 2px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+}
+
+.settlement-score-changes span,
+.settlement-note {
+  font-size: 0.72rem;
+}
+
+.settlement-score-changes strong {
+  font-size: 0.78rem;
+}
+
+.settlement-actions {
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
 .players {
   display: grid;
   gap: 10px;
@@ -766,6 +884,20 @@ footer {
   .game-start-row {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .settlement-panel {
+    padding: 14px;
+  }
+
+  .settlement-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settlement-winners,
+  .settlement-score-changes {
+    grid-template-columns: 1fr;
   }
 
   .history-actions {
