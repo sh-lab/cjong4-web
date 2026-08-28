@@ -16,7 +16,10 @@ set(CJ4_OPPONENT_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(CJ4_OPPONENT_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/cjong4-opponent EXCLUDE_FROM_ALL)
 
-set(CJ4_WEB_SOURCES src/web_api.c)
+set(CJ4_WEB_SOURCES
+    src/game_session.c
+    src/web_api.c
+)
 
 if(EMSCRIPTEN)
     add_executable(cjong4_web ${CJ4_WEB_SOURCES})

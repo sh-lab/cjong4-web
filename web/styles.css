@@ -150,8 +150,25 @@ main {
 
 .game-start-row {
   display: flex;
+  align-items: center;
+  gap: 16px;
   justify-content: flex-end;
   margin-top: 12px;
+}
+
+.hand-visibility-setting {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.hand-visibility-setting input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
 }
 
 .game-start-row button {
@@ -335,6 +352,69 @@ main {
   color: #bfd0c6;
 }
 
+.round-dora {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.round-dora .tiles {
+  flex-wrap: nowrap;
+}
+
+.round-dora .tile {
+  width: 24px;
+  height: 33px;
+}
+
+.action-panel {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 10px;
+  padding: 5px 14px;
+  border: 2px solid var(--green-700);
+  background: #fff;
+}
+
+.action-panel[hidden] {
+  display: none;
+}
+
+.action-panel strong {
+  flex: 0 0 auto;
+  color: var(--green-900);
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.action-buttons button {
+  display: inline-flex;
+  min-height: 54px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 9px;
+}
+
+.action-choice-label {
+  flex: 0 0 auto;
+}
+
+.action-choice-tiles {
+  display: inline-flex;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.action-choice-tiles .tile {
+  width: 31px;
+  height: 43px;
+}
+
 .players {
   display: grid;
   gap: 10px;
@@ -344,6 +424,11 @@ main {
   border: 1px solid var(--line);
   border-left: 5px solid var(--green-700);
   background: var(--paper);
+}
+
+.player-panel.current-player {
+  border-left-color: var(--red);
+  background: #fff;
 }
 
 .player-header {
@@ -410,6 +495,20 @@ main {
   gap: 3px;
 }
 
+.melds {
+  margin-left: auto;
+  padding-left: 10px;
+  border-left: 1px solid #d3ddd7;
+}
+
+.melds:empty {
+  display: none;
+}
+
+.meld-break {
+  width: 5px;
+}
+
 .tile {
   display: inline-flex;
   width: 36px;
@@ -428,6 +527,17 @@ main {
 
 .tile.selectable {
   cursor: pointer;
+  outline: 2px solid var(--green-700);
+  outline-offset: 1px;
+}
+
+.tile.inactive {
+  opacity: 0.55;
+}
+
+.tile.riichi-discard {
+  outline: 2px solid var(--red);
+  outline-offset: 1px;
 }
 
 .tile.selectable:focus-visible {
@@ -653,6 +763,11 @@ footer {
     width: 100%;
   }
 
+  .game-start-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .history-actions {
     display: grid;
     width: 100%;
@@ -668,6 +783,11 @@ footer {
   .history-actions button {
     padding-inline: 6px;
     font-size: 0.75rem;
+  }
+
+  .action-panel {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .round-note {

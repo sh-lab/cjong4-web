@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="light">
     <title>cjong4-web</title>
     <meta name="description" content="ブラウザで動作する4人打ち麻雀と視覚的デバッグ環境">
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./styles.css?v=12">
   </head>
   <body>
     <header class="app-header">
@@ -48,16 +48,26 @@
         </details>
 
         <div class="game-start-row">
+          <label class="hand-visibility-setting" for="hide-opponent-hands">
+            <input id="hide-opponent-hands" type="checkbox" checked>
+            <span>人間以外の手牌を隠す</span>
+          </label>
           <button id="start-game" type="button" disabled>対局開始</button>
         </div>
       </section>
 
       <section class="round-bar" aria-label="局情報">
-        <strong>東1局</strong>
-        <span>0本場</span>
-        <span>供託 0</span>
-        <span>残り 70枚</span>
-        <span class="round-note">画面骨格・Wasm接続確認</span>
+        <strong id="round-name">開始前</strong>
+        <span id="round-honba">0本場</span>
+        <span id="round-riichi">供託 0</span>
+        <span id="round-remaining">残り —</span>
+        <span class="round-dora">ドラ表示 <span id="dora-indicators" class="tiles"></span></span>
+        <span id="round-note" class="round-note">対局設定を選んで開始してください</span>
+      </section>
+
+      <section id="action-panel" class="action-panel" aria-live="polite" hidden>
+        <strong id="action-title">行動を選択</strong>
+        <div id="action-buttons" class="action-buttons"></div>
       </section>
 
       <section id="players" class="players" aria-label="プレイヤー一覧"></section>
@@ -69,10 +79,10 @@
             <h2 id="timeline-title">対局履歴</h2>
           </div>
           <div class="history-actions" aria-label="対局履歴の操作">
-            <output for="history-position">開始前</output>
-            <button type="button" disabled>一手進める</button>
-            <button type="button" disabled>一時停止</button>
-            <button type="button" disabled>再生</button>
+            <output id="history-output" for="history-position">開始前</output>
+            <button id="step-game" type="button" disabled>次へ進める</button>
+            <button id="pause-game" type="button" disabled>一時停止</button>
+            <button id="play-game" type="button" disabled>再生</button>
           </div>
         </div>
         <input id="history-position" type="range" min="0" max="0" value="0" disabled>
@@ -92,6 +102,6 @@
     <footer>
       音・アニメーションなし / 原典MJAI対応予定 / Riichi Lab拡張は未対応
     </footer>
-    <script type="module" src="./app.js"></script>
+    <script type="module" src="./app.js?v=12"></script>
   </body>
 </html>

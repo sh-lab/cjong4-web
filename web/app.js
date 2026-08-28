@@ -1,4 +1,4 @@
-import createCjong4WebModule from "./cjong4-web.js";
+import createCjong4WebModule from "./cjong4-web.js?v=12";
 
 const WINDS = ["東", "南", "西", "北"];
 const RULE_GROUPS = [
@@ -103,23 +103,55 @@ const RULE_DEFAULTS = Object.freeze({
   pao_suukantsu: false,
   multi_ron_honba_first_only: true,
 });
-const SAMPLE_HANDS = [
-  ["1m", "2m", "3m", "4p", "5p", "6p", "2s", "3s", "4s", "7s", "8s", "9s", "1z"],
-  ["2m", "3m", "4m", "6m", "7m", "8m", "1p", "1p", "4s", "5s", "6s", "6z", "6z"],
-  ["1m", "1m", "5m", "5m", "2p", "2p", "7p", "7p", "3s", "3s", "7s", "7s", "5z"],
-  ["7m", "8m", "9m", "3p", "4p", "5p", "1s", "2s", "3s", "5s", "5s", "7z", "7z"],
-];
-const SAMPLE_DISCARDS = [
-  ["9m", "1p", "9p"],
-  ["1s", "9s", "2z"],
-  ["4z", "9m"],
-  ["3z", "8p", "1m"],
-];
+const CONTROLLER_IDS = Object.freeze({
+  human: 0,
+  betaori: 1,
+  chanta: 2,
+  chiitoi: 3,
+  kokushi: 4,
+  pinfu: 5,
+  somete: 6,
+  tanyao: 7,
+  toitoi: 8,
+});
+const CONTROLLER_NAMES = Object.freeze(Object.keys(CONTROLLER_IDS));
+const ACTION_LABELS = Object.freeze({
+  discard: "打牌",
+  chi: "チー",
+  pon: "ポン",
+  ankan: "暗槓",
+  minkan: "明槓",
+  kakan: "加槓",
+  riichi: "リーチ",
+  tsumo: "ツモ",
+  ron: "ロン",
+  abortive_draw: "九種九牌",
+  pass: "見送る",
+});
+const PHASE_LABELS = Object.freeze({
+  draw: "自摸後",
+  kakan_resolve: "加槓確認",
+  ankan_resolve: "暗槓確認",
+  after_call: "副露後",
+  discard: "打牌確認",
+  round_end: "局終了",
+  settle: "精算",
+  game_end: "対局終了",
+});
 
-function createTile(id, label, selectable = false) {
+let wasmModule;
+let currentState;
+let playbackTimer;
+
+function createTile(tile, label, options = {}) {
+  const id = typeof tile === "string" ? tile : tile.tile;
+  const selectable = Boolean(options.onSelect);
   const wrapper = document.createElement(selectable ? "button" : "span");
-  wrapper.className = `tile${selectable ? " selectable" : ""}`;
-  if (selectable) wrapper.type = "button";
+  wrapper.className = `tile${selectable ? " selectable" : ""}${options.className ? ` ${options.className}` : ""}`;
+  if (selectable) {
+    wrapper.type = "button";
+    wrapper.addEventListener("click", options.onSelect);
+  }
   wrapper.setAttribute("aria-label", label);
   wrapper.innerHTML = `<svg viewBox="0 0 72 100" aria-hidden="true"><use href="./assets/tiles.svg#tile-${id}"></use></svg>`;
   return wrapper;
@@ -146,16 +178,11 @@ function renderPlayers(opponents) {
         </label>
       </header>
       <div class="player-state">
-        <span>門前</span><span>リーチなし</span><span>手番待ち</span>
+        <span class="meld-state">門前</span><span class="riichi-state">リーチなし</span><span class="turn-state">待機</span>
       </div>
-      <div class="tile-row"><span class="row-label">手牌</span><div class="tiles hand"></div></div>
+      <div class="tile-row"><span class="row-label">手牌</span><div class="tiles hand"></div><div class="tiles melds"></div></div>
       <div class="tile-row"><span class="row-label">捨て牌</span><div class="tiles discards"></div></div>
     `;
-
-    const hand = panel.querySelector(".hand");
-    SAMPLE_HANDS[index].forEach((id) => hand.append(createTile(id, `${id}の牌`, index === 0)));
-    const discards = panel.querySelector(".discards");
-    SAMPLE_DISCARDS[index].forEach((id) => discards.append(createTile(id, `${id}の捨て牌`)));
     players.append(panel);
   });
 }
@@ -252,23 +279,320 @@ function initializeRules(rules) {
   });
 }
 
-function showFailure(error) {
+function readState() {
+  const pointer = wasmModule._cj4_web_state_json();
+  return JSON.parse(wasmModule.UTF8ToString(pointer));
+}
+
+function configureRules() {
+  wasmModule._cj4_web_rules_reset();
+  RULE_GROUPS.flatMap((group) => group.fields).forEach((field, index) => {
+    const input = document.querySelector(`#rule-${field.key}`);
+    const value = field.type === "checkbox" ? Number(input.checked) : Number(input.value);
+    if (!wasmModule._cj4_web_rule_set(index, value)) {
+      throw new Error(`ルールを設定できませんでした: ${field.key}`);
+    }
+  });
+}
+
+function getSelectedControllers() {
+  return [...document.querySelectorAll(".player-controller")].map((select) => CONTROLLER_IDS[select.value]);
+}
+
+function getActionTiles(action) {
+  const tiles = [...action.tiles];
+  const includesDiscardedTile = ["chi", "pon", "minkan"].includes(action.type);
+  if (action.tile && (includesDiscardedTile || tiles.length === 0)) tiles.unshift(action.tile);
+  return tiles;
+}
+
+function formatAction(action) {
+  const tiles = getActionTiles(action).map((tile) => tile.tile);
+  const suffix = tiles.length ? ` ${tiles.join(" ")}` : "";
+  return `${ACTION_LABELS[action.type] ?? action.type}${suffix}`;
+}
+
+function createActionButton(action) {
+  const button = document.createElement("button");
+  const label = document.createElement("span");
+  const tiles = getActionTiles(action);
+
+  button.type = "button";
+  button.className = "action-choice";
+  button.setAttribute("aria-label", formatAction(action));
+  label.className = "action-choice-label";
+  label.textContent = ACTION_LABELS[action.type] ?? action.type;
+  button.append(label);
+
+  if (tiles.length) {
+    const tileGroup = document.createElement("span");
+    tileGroup.className = "action-choice-tiles";
+    tiles.forEach((tile) => tileGroup.append(createTile(tile, `${tile.tile}の牌`)));
+    button.append(tileGroup);
+  }
+
+  button.addEventListener("click", () => chooseAction(action.index));
+  return button;
+}
+
+function stopPlayback() {
+  if (playbackTimer !== undefined) {
+    clearInterval(playbackTimer);
+    playbackTimer = undefined;
+  }
+}
+
+function advanceForcedState() {
+  for (let guard = 0; guard < 4096; guard += 1) {
+    if (!currentState?.active || currentState.waiting_for_input || currentState.phase === "game_end") return;
+
+    const controller = currentState.players[currentState.current_player].controller;
+    const resolvesReaction = ["discard", "kakan_resolve", "ankan_resolve"].includes(currentState.phase);
+    const isTurnPhase = ["draw", "after_call"].includes(currentState.phase);
+    const handlesTurn = isTurnPhase && controller !== CONTROLLER_IDS.human;
+    const preparesHumanTurn = isTurnPhase && controller === CONTROLLER_IDS.human;
+    if (!resolvesReaction && !handlesTurn && !preparesHumanTurn) return;
+
+    const result = wasmModule._cj4_web_game_step();
+    currentState = readState();
+    if (result === 0) return;
+  }
+
+  throw new Error("対局の自動進行が上限回数を超えました。");
+}
+
+function chooseAction(index) {
+  stopPlayback();
+  if (!currentState || !wasmModule._cj4_web_game_choose(currentState.generation, index)) return;
+  currentState = readState();
+  advanceForcedState();
+  renderGameState();
+}
+
+function renderPendingActions() {
+  const panel = document.querySelector("#action-panel");
+  const title = document.querySelector("#action-title");
+  const buttons = document.querySelector("#action-buttons");
+  buttons.replaceChildren();
+
+  if (!currentState.waiting_for_input) {
+    panel.hidden = true;
+    return;
+  }
+
+  panel.hidden = false;
+  const hasDiscard = currentState.legal_actions.some((action) => action.type === "discard");
+  title.textContent = `プレイヤー${currentState.pending_player + 1}: ${hasDiscard ? "手牌または行動を選択" : "行動を選択"}`;
+  currentState.legal_actions
+    .filter((action) => action.type !== "discard")
+    .forEach((action) => buttons.append(createActionButton(action)));
+}
+
+function renderPlayer(player) {
+  const panel = document.querySelectorAll(".player-panel")[player.player];
+  const discardActions = new Map(
+    currentState.legal_actions
+      .filter((action) => action.type === "discard" && action.player === player.player)
+      .map((action) => [action.tile.id, action.index]),
+  );
+
+  panel.classList.toggle("current-player", player.player === currentState.current_player);
+  panel.querySelector(".seat-wind").textContent = WINDS[player.seat_wind];
+  panel.querySelector(".player-identity h2").textContent = `プレイヤー${player.player + 1}`;
+  panel.querySelector(".player-identity p").textContent = `${player.player === currentState.dealer ? "親" : "子"} · ${player.score}点`;
+  const meldState = panel.querySelector(".meld-state");
+  meldState.textContent = "門前";
+  meldState.hidden = player.melds.length > 0;
+  panel.querySelector(".riichi-state").textContent = player.riichi ? "リーチ" : "リーチなし";
+  panel.querySelector(".turn-state").textContent = player.player === currentState.current_player ? "手番" : "待機";
+  panel.querySelector(".player-controller").value = CONTROLLER_NAMES[player.controller];
+
+  const hand = panel.querySelector(".hand");
+  const hidesHand = document.querySelector("#hide-opponent-hands").checked
+    && player.controller !== CONTROLLER_IDS.human;
+  hand.replaceChildren();
+  player.hand.forEach((tile) => {
+    if (hidesHand) {
+      hand.append(createTile("back", "伏せられた牌"));
+      return;
+    }
+    const actionIndex = discardActions.get(tile.id);
+    hand.append(createTile(tile, `${tile.tile}の牌`, {
+      onSelect: actionIndex === undefined ? undefined : () => chooseAction(actionIndex),
+    }));
+  });
+
+  const melds = panel.querySelector(".melds");
+  melds.replaceChildren();
+  player.melds.forEach((meld, meldIndex) => {
+    if (meldIndex) {
+      const separator = document.createElement("span");
+      separator.className = "meld-break";
+      melds.append(separator);
+    }
+    meld.tiles.forEach((tile) => melds.append(createTile(tile, `${meld.type}の${tile.tile}`)));
+  });
+
+  const discards = panel.querySelector(".discards");
+  discards.replaceChildren();
+  player.discards.forEach((discard) => {
+    const classes = [
+      discard.active ? "" : "inactive",
+      discard.riichi ? "riichi-discard" : "",
+    ].filter(Boolean).join(" ");
+    discards.append(createTile(discard, `${discard.tile}の捨て牌`, { className: classes }));
+  });
+}
+
+function updateHistoryControls() {
+  const history = currentState.history;
+  const range = document.querySelector("#history-position");
+  range.min = 0;
+  range.max = Math.max(0, history.count - 1);
+  range.value = history.index;
+  range.disabled = history.count <= 1;
+  document.querySelector("#history-output").textContent = `${history.index} / ${history.count - 1}手`;
+
+  const ended = currentState.phase === "game_end";
+  document.querySelector("#step-game").disabled = ended || currentState.waiting_for_input;
+  document.querySelector("#pause-game").disabled = playbackTimer === undefined;
+  document.querySelector("#play-game").disabled = ended || currentState.waiting_for_input || playbackTimer !== undefined;
+}
+
+function renderGameState() {
+  if (!currentState?.active) return;
+
+  const phaseLabel = PHASE_LABELS[currentState.phase] ?? currentState.phase;
+  const ranking = [...currentState.players]
+    .sort((left, right) => right.score - left.score || left.player - right.player)
+    .map((player, index) => `${index + 1}位 P${player.player + 1} ${player.score}点`)
+    .join(" / ");
+
+  document.querySelector("#round-name").textContent = `${WINDS[currentState.round_wind]}${currentState.dealer + 1}局`;
+  document.querySelector("#round-honba").textContent = `${currentState.honba}本場`;
+  document.querySelector("#round-riichi").textContent = `供託 ${currentState.riichi_sticks}`;
+  document.querySelector("#round-remaining").textContent = `残り ${currentState.remaining}枚`;
+  document.querySelector("#round-note").textContent = currentState.phase === "game_end"
+    ? `${phaseLabel} / ${ranking}`
+    : `${phaseLabel} / seed ${currentState.seed}`;
+
+  const dora = document.querySelector("#dora-indicators");
+  dora.replaceChildren();
+  currentState.dora_indicators.forEach((tile) => dora.append(createTile(tile, `ドラ表示牌 ${tile.tile}`)));
+
+  currentState.players.forEach(renderPlayer);
+  renderPendingActions();
+  updateHistoryControls();
+
+  document.querySelector("#schema-version").textContent = currentState.schema_version;
+  document.querySelector("#raw-bootstrap").textContent = JSON.stringify(currentState, null, 2);
   const status = document.querySelector("#engine-status");
-  status.textContent = "Wasmの読み込みに失敗";
+  status.textContent = currentState.phase === "game_end" ? "対局終了" : "対局中";
+  status.dataset.state = "ready";
+}
+
+function stepGame() {
+  if (!currentState?.active) return 0;
+  const result = wasmModule._cj4_web_game_step();
+  currentState = readState();
+  if (result === 1) advanceForcedState();
+  if (result !== 1 || currentState.waiting_for_input || currentState.phase === "game_end") stopPlayback();
+  renderGameState();
+  return result;
+}
+
+function playGame() {
+  if (!currentState?.active || currentState.waiting_for_input || currentState.phase === "game_end") return;
+  playbackTimer = setInterval(stepGame, 70);
+  updateHistoryControls();
+}
+
+function startGame() {
+  stopPlayback();
+  configureRules();
+  const controllers = getSelectedControllers();
+  const seed = Date.now() >>> 0;
+  const wallMode = document.querySelector("#wall-mode").value === "preset" ? 1 : 0;
+  const started = wasmModule._cj4_web_game_start(seed, wallMode, ...controllers);
+  if (!started) throw new Error("対局を開始できませんでした。設定値を確認してください。");
+
+  currentState = readState();
+  document.querySelector("#start-game").textContent = "新しい対局";
+  renderGameState();
+  if (controllers[currentState.current_player] === CONTROLLER_IDS.human) stepGame();
+  else playGame();
+}
+
+function rewindGame(historyIndex) {
+  stopPlayback();
+  if (!wasmModule._cj4_web_game_rewind(Number(historyIndex))) return;
+  currentState = readState();
+  renderGameState();
+}
+
+function changeController(player, controllerName) {
+  if (!currentState?.active) return;
+
+  stopPlayback();
+  const controller = CONTROLLER_IDS[controllerName];
+  if (!wasmModule._cj4_web_game_set_controller(player, controller)) {
+    showFailure(new Error("操作を切り替えられませんでした。"), "操作切り替えに失敗");
+    return;
+  }
+
+  currentState = readState();
+  const isCurrentHumanTurn = controller === CONTROLLER_IDS.human &&
+    player === currentState.current_player &&
+    (currentState.phase === "draw" || currentState.phase === "after_call") &&
+    !currentState.waiting_for_input;
+  if (isCurrentHumanTurn) stepGame();
+  else renderGameState();
+}
+
+function wireGameControls() {
+  document.querySelectorAll(".player-controller").forEach((select, player) => {
+    select.addEventListener("change", () => changeController(player, select.value));
+  });
+  document.querySelector("#start-game").addEventListener("click", () => {
+    try {
+      startGame();
+    } catch (error) {
+      showFailure(error, "対局開始に失敗");
+    }
+  });
+  document.querySelector("#step-game").addEventListener("click", stepGame);
+  document.querySelector("#pause-game").addEventListener("click", () => {
+    stopPlayback();
+    updateHistoryControls();
+  });
+  document.querySelector("#play-game").addEventListener("click", playGame);
+  document.querySelector("#history-position").addEventListener("input", (event) => rewindGame(event.target.value));
+  document.querySelector("#hide-opponent-hands").addEventListener("change", renderGameState);
+}
+
+function showFailure(error, message = "Wasmの読み込みに失敗") {
+  const status = document.querySelector("#engine-status");
+  status.textContent = message;
   status.dataset.state = "error";
   document.querySelector("#raw-bootstrap").textContent = String(error);
 }
 
 async function main() {
   try {
-    const module = await createCjong4WebModule();
-    const pointer = module._cj4_web_bootstrap_json();
-    const raw = module.UTF8ToString(pointer);
+    wasmModule = await createCjong4WebModule({
+      locateFile: (path) => path.endsWith(".wasm") ? `${path}?v=12` : path,
+    });
+    const pointer = wasmModule._cj4_web_bootstrap_json();
+    const raw = wasmModule.UTF8ToString(pointer);
     const bootstrap = JSON.parse(raw);
-    const apiVersion = module._cj4_web_api_version();
+    const apiVersion = wasmModule._cj4_web_api_version();
+    if (apiVersion !== 3) {
+      throw new Error(`Wasm APIの版が一致しません（期待値: 3、実際: ${apiVersion}）。`);
+    }
 
     renderPlayers(bootstrap.opponents);
     initializeRules(bootstrap.rules);
+    wireGameControls();
 
     document.querySelector("#api-version").textContent = apiVersion;
     document.querySelector("#schema-version").textContent = bootstrap.schema_version;
@@ -278,6 +602,7 @@ async function main() {
     const status = document.querySelector("#engine-status");
     status.textContent = bootstrap.engine.ready ? "Wasm接続済み" : "エンジン初期化エラー";
     status.dataset.state = bootstrap.engine.ready ? "ready" : "error";
+    document.querySelector("#start-game").disabled = !bootstrap.engine.ready;
   } catch (error) {
     showFailure(error);
   }
