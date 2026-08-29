@@ -58,8 +58,7 @@ button:disabled {
 }
 
 .app-header,
-main,
-footer {
+main {
   width: min(1440px, calc(100% - 32px));
   margin-inline: auto;
 }
@@ -121,6 +120,7 @@ main {
 
 .control-panel,
 .timeline,
+.mjai-panel,
 .debug-panel {
   border: 1px solid var(--line);
   background: var(--paper);
@@ -192,11 +192,13 @@ main {
 }
 
 .rules-accordion > summary::-webkit-details-marker,
+.mjai-panel > summary::-webkit-details-marker,
 .debug-panel > summary::-webkit-details-marker {
   display: none;
 }
 
 .rules-accordion > summary::before,
+.mjai-panel > summary::before,
 .debug-panel > summary::before {
   content: "";
   flex: 0 0 auto;
@@ -208,6 +210,7 @@ main {
 }
 
 .rules-accordion[open] > summary::before,
+.mjai-panel[open] > summary::before,
 .debug-panel[open] > summary::before {
   transform: rotate(45deg);
 }
@@ -228,6 +231,43 @@ main {
 .rules-body {
   padding: 14px;
   border-top: 1px solid var(--line);
+}
+
+.wall-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.wall-settings .wall-setting {
+  margin-bottom: 0;
+}
+
+.seed-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+}
+
+.seed-setting label {
+  display: grid;
+  gap: 3px;
+}
+
+.seed-setting small {
+  color: var(--ink-soft);
+}
+
+.seed-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.seed-input-row input {
+  width: 150px;
 }
 
 .wall-setting {
@@ -692,10 +732,12 @@ main {
   margin-top: 14px;
 }
 
+.mjai-panel,
 .debug-panel {
   margin-top: 14px;
 }
 
+.mjai-panel summary,
 .debug-panel summary {
   display: flex;
   align-items: center;
@@ -704,6 +746,34 @@ main {
   cursor: pointer;
   list-style: none;
   font-weight: 800;
+}
+
+.mjai-panel summary .rules-summary {
+  margin-left: auto;
+}
+
+.mjai-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.mjai-toolbar p {
+  margin: 0 auto 0 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+#mjai-copy-status {
+  color: var(--green-700);
+  font-size: 0.75rem;
+}
+
+#mjai-history {
+  max-height: 320px;
 }
 
 .debug-grid {
@@ -738,13 +808,6 @@ pre {
   font: 0.78rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-footer {
-  padding: 18px 0 28px;
-  border-top: 1px solid var(--line);
-  color: var(--ink-soft);
-  font-size: 0.75rem;
-}
-
 @media (min-width: 1100px) {
   .app-header {
     min-height: 76px;
@@ -752,10 +815,6 @@ footer {
 
   main {
     padding-block: 12px 14px;
-  }
-
-  footer {
-    padding-block: 12px 18px;
   }
 
   .players {
@@ -819,12 +878,17 @@ footer {
   }
 
   .timeline,
+  .mjai-panel,
   .debug-panel {
     margin-top: 10px;
   }
 }
 
 @media (max-width: 900px) {
+  .wall-settings {
+    grid-template-columns: 1fr;
+  }
+
   .rule-sections {
     grid-template-columns: 1fr;
   }
@@ -837,8 +901,7 @@ footer {
 
 @media (max-width: 600px) {
   .app-header,
-  main,
-  footer {
+  main {
     width: min(100% - 20px, 1440px);
   }
 
@@ -862,6 +925,17 @@ footer {
   .wall-setting {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .seed-setting,
+  .mjai-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .seed-input-row input {
+    min-width: 0;
+    width: 100%;
   }
 
   .wall-setting select {

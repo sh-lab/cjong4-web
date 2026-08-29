@@ -8,6 +8,8 @@ int
 main(void)
 {
     const char *json = cj4_web_bootstrap_json();
+    const char *mjai;
+    char initial_mjai[8192];
     unsigned steps = 0;
 
     assert(cj4_web_api_version() == CJ4_WEB_API_VERSION);
@@ -36,11 +38,20 @@ main(void)
                CJ4_WEB_CONTROLLER_TOITOI) == 1);
 
     json = cj4_web_state_json();
-    assert(strstr(json, "\"schema_version\":3") != NULL);
+    assert(strstr(json, "\"schema_version\":4") != NULL);
     assert(strstr(json, "\"active\":true") != NULL);
     assert(strstr(json, "\"seed\":12345") != NULL);
     assert(strstr(json, "\"history\":{\"index\":0,\"count\":1}") != NULL);
     assert(strstr(json, "\"players\":[") != NULL);
+    assert(strstr(json, "\"mjai\":{\"event_count\":3,\"format\":\"jsonl\"}") != NULL);
+    mjai = cj4_web_mjai_log_jsonl();
+    assert(strstr(mjai, "{\"type\":\"start_game\"") != NULL);
+    assert(strstr(mjai, "{\"type\":\"start_kyoku\"") != NULL);
+    assert(strstr(mjai, "{\"type\":\"tsumo\",\"actor\":0") != NULL);
+    assert(strstr(mjai, "\"tehais\":[[") != NULL);
+    assert(strstr(mjai, "request_id") == NULL);
+    assert(strlen(mjai) < sizeof(initial_mjai));
+    strcpy(initial_mjai, mjai);
     {
         const char *dora = strstr(json, "\"dora_indicators\":[");
         const char *dora_end = dora ? strstr(dora, "],\"history\"") : NULL;
@@ -85,10 +96,30 @@ main(void)
     }
     assert(steps < 12000);
     assert(strstr(cj4_web_state_json(), "\"phase\":\"game_end\"") != NULL);
+    mjai = cj4_web_mjai_log_jsonl();
+    assert(strstr(mjai, "{\"type\":\"dahai\"") != NULL);
+    assert(strstr(mjai, "{\"type\":\"end_kyoku\"}") != NULL);
+    assert(strstr(mjai, "{\"type\":\"hora\"") != NULL);
+    assert(strstr(mjai, "{\"type\":\"end_game\"") != NULL);
     assert(cj4_web_game_rewind(0) == 1);
     assert(strstr(
                cj4_web_state_json(),
                "\"history\":{\"index\":0,") != NULL);
+    assert(strcmp(cj4_web_mjai_log_jsonl(), initial_mjai) == 0);
+
+    assert(cj4_web_game_step() == 1);
+    assert(strstr(cj4_web_mjai_log_jsonl(), "{\"type\":\"dahai\"") != NULL);
+
+    cj4_web_rules_reset();
+    assert(cj4_web_rule_set(0, 0) == 1);
+    assert(cj4_web_game_start(
+               12345,
+               0,
+               CJ4_WEB_CONTROLLER_BETAORI,
+               CJ4_WEB_CONTROLLER_CHANTA,
+               CJ4_WEB_CONTROLLER_PINFU,
+               CJ4_WEB_CONTROLLER_TOITOI) == 1);
+    assert(strcmp(cj4_web_mjai_log_jsonl(), initial_mjai) == 0);
 
     cj4_web_rules_reset();
     assert(cj4_web_game_start(

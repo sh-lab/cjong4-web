@@ -1,4 +1,4 @@
-import createCjong4WebModule from "./cjong4-web.js?v=13";
+import createCjong4WebModule from "./cjong4-web.js?v=17";
 
 const WINDS = ["東", "南", "西", "北"];
 const RULE_GROUPS = [
@@ -174,6 +174,17 @@ let currentState;
 let playbackTimer;
 let dismissedSettlementHistory = -1;
 
+function generateSeed() {
+  const values = new Uint32Array(1);
+  if (globalThis.crypto?.getRandomValues) globalThis.crypto.getRandomValues(values);
+  else values[0] = Date.now() >>> 0;
+  return values[0] || 1;
+}
+
+function setRandomSeed() {
+  document.querySelector("#wall-seed").value = String(generateSeed());
+}
+
 function createTile(tile, label, options = {}) {
   const id = typeof tile === "string" ? tile : tile.tile;
   const selectable = Boolean(options.onSelect);
@@ -291,6 +302,7 @@ function initializeRules(rules) {
   const summary = document.querySelector("#rule-summary");
   const reset = document.querySelector("#reset-rules");
   const wallMode = document.querySelector("#wall-mode");
+  const regenerateSeed = document.querySelector("#regenerate-seed");
 
   renderRuleControls();
   applyRules(defaults);
@@ -303,16 +315,30 @@ function initializeRules(rules) {
   wallMode.addEventListener("change", () => {
     summary.textContent = "変更あり";
   });
+  document.querySelector("#wall-seed").addEventListener("change", () => {
+    summary.textContent = "変更あり";
+  });
   reset.addEventListener("click", () => {
     applyRules(defaults);
     wallMode.value = "random";
+    setRandomSeed();
     summary.textContent = "デフォルト";
   });
+  regenerateSeed.addEventListener("click", () => {
+    setRandomSeed();
+    summary.textContent = "変更あり";
+  });
+  setRandomSeed();
 }
 
 function readState() {
   const pointer = wasmModule._cj4_web_state_json();
   return JSON.parse(wasmModule.UTF8ToString(pointer));
+}
+
+function readMjaiHistory() {
+  const pointer = wasmModule._cj4_web_mjai_log_jsonl();
+  return wasmModule.UTF8ToString(pointer);
 }
 
 function configureRules() {
@@ -587,6 +613,14 @@ function updateHistoryControls() {
   document.querySelector("#play-game").disabled = ended || currentState.waiting_for_input || playbackTimer !== undefined;
 }
 
+function renderMjaiHistory() {
+  const history = readMjaiHistory();
+  document.querySelector("#mjai-history").textContent = history || "対局開始後に履歴を表示します";
+  document.querySelector("#mjai-event-count").textContent = `${currentState.mjai.event_count}イベント`;
+  document.querySelector("#copy-mjai").disabled = !history;
+  document.querySelector("#download-mjai").disabled = !history;
+}
+
 function renderGameState() {
   if (!currentState?.active) return;
 
@@ -612,6 +646,7 @@ function renderGameState() {
   renderPendingActions();
   renderSettlement();
   updateHistoryControls();
+  renderMjaiHistory();
 
   document.querySelector("#schema-version").textContent = currentState.schema_version;
   document.querySelector("#raw-bootstrap").textContent = JSON.stringify(currentState, null, 2);
@@ -642,7 +677,12 @@ function startGame() {
   dismissedSettlementHistory = -1;
   configureRules();
   const controllers = getSelectedControllers();
-  const seed = Date.now() >>> 0;
+  const seedInput = document.querySelector("#wall-seed");
+  const seed = Number(seedInput.value);
+  if (!Number.isInteger(seed) || seed < 1 || seed > 0xffffffff) {
+    seedInput.focus();
+    throw new Error("山のシードは1〜4294967295の整数で指定してください。");
+  }
   const wallMode = document.querySelector("#wall-mode").value === "preset" ? 1 : 0;
   const started = wasmModule._cj4_web_game_start(seed, wallMode, ...controllers);
   if (!started) throw new Error("対局を開始できませんでした。設定値を確認してください。");
@@ -708,6 +748,23 @@ function wireGameControls() {
     dismissedSettlementHistory = currentState?.history.index ?? -1;
     stepGame();
   });
+  document.querySelector("#copy-mjai").addEventListener("click", async () => {
+    const status = document.querySelector("#mjai-copy-status");
+    try {
+      await navigator.clipboard.writeText(readMjaiHistory());
+      status.textContent = "コピーしました";
+    } catch (error) {
+      status.textContent = "コピーできませんでした";
+    }
+  });
+  document.querySelector("#download-mjai").addEventListener("click", () => {
+    const blob = new Blob([readMjaiHistory()], { type: "application/x-ndjson;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `cjong4-${currentState.seed}.jsonl`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  });
 }
 
 function showFailure(error, message = "Wasmの読み込みに失敗") {
@@ -720,14 +777,14 @@ function showFailure(error, message = "Wasmの読み込みに失敗") {
 async function main() {
   try {
     wasmModule = await createCjong4WebModule({
-      locateFile: (path) => path.endsWith(".wasm") ? `${path}?v=13` : path,
+      locateFile: (path) => path.endsWith(".wasm") ? `${path}?v=17` : path,
     });
     const pointer = wasmModule._cj4_web_bootstrap_json();
     const raw = wasmModule.UTF8ToString(pointer);
     const bootstrap = JSON.parse(raw);
     const apiVersion = wasmModule._cj4_web_api_version();
-    if (apiVersion !== 3) {
-      throw new Error(`Wasm APIの版が一致しません（期待値: 3、実際: ${apiVersion}）。`);
+    if (apiVersion !== 4) {
+      throw new Error(`Wasm APIの版が一致しません（期待値: 4、実際: ${apiVersion}）。`);
     }
 
     renderPlayers(bootstrap.opponents);

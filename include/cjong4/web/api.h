@@ -10,7 +10,7 @@ extern "C"
 
     enum
     {
-        CJ4_WEB_API_VERSION = 3
+        CJ4_WEB_API_VERSION = 4
     };
 
     typedef enum
@@ -75,6 +75,10 @@ extern "C"
     /* Returns the current versioned UI snapshot as library-owned JSON. */
     const char *
     cj4_web_state_json(void);
+
+    /* Returns the retained match history as MJAI JSON Lines. */
+    const char *
+    cj4_web_mjai_log_jsonl(void);
 
 #ifdef __cplusplus
 }

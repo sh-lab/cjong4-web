@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="light">
     <title>cjong4-web</title>
     <meta name="description" content="ブラウザで動作する4人打ち麻雀と視覚的デバッグ環境">
-    <link rel="stylesheet" href="./styles.css?v=13">
+    <link rel="stylesheet" href="./styles.css?v=17">
   </head>
   <body>
     <header class="app-header">
@@ -27,16 +27,27 @@
             <span id="rule-summary" class="rules-summary">読み込み中</span>
           </summary>
           <div class="rules-body">
-            <label class="wall-setting" for="wall-mode">
-              <span>
-                <strong>山の設定</strong>
-                <small>プリセットの構成は今後追加します。</small>
-              </span>
-              <select id="wall-mode">
-                <option value="random" selected>ランダム</option>
-                <option value="preset">プリセット（デバッグ用）</option>
-              </select>
-            </label>
+            <div class="wall-settings">
+              <label class="wall-setting" for="wall-mode">
+                <span>
+                  <strong>山の設定</strong>
+                </span>
+                <select id="wall-mode">
+                  <option value="random" selected>ランダム</option>
+                  <option value="preset">プリセット（デバッグ用）</option>
+                </select>
+              </label>
+              <div class="seed-setting">
+                <label for="wall-seed">
+                  <strong>山のシード</strong>
+                  <small>同じ設定とシードで山を再現できます。</small>
+                </label>
+                <div class="seed-input-row">
+                  <input id="wall-seed" type="number" min="1" max="4294967295" step="1" inputmode="numeric">
+                  <button id="regenerate-seed" class="secondary-button" type="button">再生成</button>
+                </div>
+              </div>
+            </div>
             <div class="rules-toolbar">
               <p>各項目を個別に変更できます。</p>
               <button id="reset-rules" class="secondary-button" type="button" disabled>
@@ -110,6 +121,20 @@
         <input id="history-position" type="range" min="0" max="0" value="0" disabled>
       </section>
 
+      <details class="mjai-panel">
+        <summary>
+          <span>MJAI履歴</span>
+          <span id="mjai-event-count" class="rules-summary">開始前</span>
+        </summary>
+        <div class="mjai-toolbar">
+          <p>1行1JSON（JSON Lines）で出力します。</p>
+          <span id="mjai-copy-status" role="status"></span>
+          <button id="copy-mjai" class="secondary-button" type="button" disabled>コピー</button>
+          <button id="download-mjai" class="secondary-button" type="button" disabled>保存</button>
+        </div>
+        <pre id="mjai-history" aria-label="MJAI JSON Lines">対局開始後に履歴を表示します</pre>
+      </details>
+
       <details class="debug-panel">
         <summary>デバッグ情報</summary>
         <div class="debug-grid">
@@ -121,9 +146,6 @@
       </details>
     </main>
 
-    <footer>
-      音・アニメーションなし / 原典MJAI対応予定 / Riichi Lab拡張は未対応
-    </footer>
-    <script type="module" src="./app.js?v=13"></script>
+    <script type="module" src="./app.js?v=17"></script>
   </body>
 </html>
