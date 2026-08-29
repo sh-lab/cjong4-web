@@ -11,10 +11,16 @@ if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/cjong4-opponent/CMakeLists.t
     message(FATAL_ERROR
         "cjong4-opponent is missing. Run: git submodule update --init --recursive")
 endif()
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/cjong4-mjai/CMakeLists.txt")
+    message(FATAL_ERROR
+        "cjong4-mjai is missing. Run: git submodule update --init --recursive")
+endif()
 
 set(CJ4_OPPONENT_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(CJ4_OPPONENT_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/cjong4-opponent EXCLUDE_FROM_ALL)
+set(CJ4_MJAI_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+add_subdirectory(external/cjong4-mjai EXCLUDE_FROM_ALL)
 
 set(CJ4_WEB_SOURCES
     src/game_session.c
@@ -31,7 +37,7 @@ endif()
 target_include_directories(cjong4_web PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
-target_link_libraries(cjong4_web PUBLIC cjong4::opponents)
+target_link_libraries(cjong4_web PUBLIC cjong4::opponents cjong4::mjai)
 
 if(MSVC)
     target_compile_options(cjong4_web PRIVATE /W4)

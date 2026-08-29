@@ -1,6 +1,6 @@
 # cjong4-web
 
-`cjong4` と `cjong4-opponent` をWebAssembly化し、ブラウザで4人打ち麻雀と
+`cjong4`、`cjong4-opponent`、`cjong4-mjai`をWebAssembly化し、ブラウザで4人打ち麻雀と
 視覚的デバッグを行うためのプロジェクトです。
 
 Emscriptenビルド、ブラウザ向けC API、編集可能な対局ルール、4席の人間／opponent
@@ -8,6 +8,10 @@ Emscriptenビルド、ブラウザ向けC API、編集可能な対局ルール�
 対局状態はWasm側で保持し、ブラウザへバージョン付きJSONスナップショットを渡します。
 各席の操作は対局中でも人間／opponentを切り替えられます。
 山のシード指定と、MJAIイベント履歴の表示・コピー・JSON Lines保存に対応しています。
+
+## ステータス / Status
+
+v0.9リリース / v0.9 Release
 
 ## 準備
 

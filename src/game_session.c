@@ -14,6 +14,7 @@
 #include <cjong4/core/state_settle.h>
 #include <cjong4/core/state_tsumo.h>
 #include <cjong4/manager/manager.h>
+#include <cjong4/mjai.h>
 #include <cjong4/opponent/opponent_betaori.h>
 #include <cjong4/opponent/opponent_chanta.h>
 #include <cjong4/opponent/opponent_chiitoi.h>
@@ -494,77 +495,43 @@ cj4_web_tile_name(cj4_tile_id tile, char output[3])
     return output;
 }
 
-static const char *
-cj4_web_mjai_tile_name(cj4_tile_id tile, char output[4])
-{
-    static const char honors[] = "ESWNPFC";
-    cj4_tile_type type = cj4_tile_get_type(tile);
-    uint8_t number;
-    char suit;
-
-    if (type >= 27)
-    {
-        output[0] = honors[type - 27];
-        output[1] = '\0';
-        return output;
-    }
-
-    if (type < 9)
-    {
-        number = (uint8_t)(type + 1);
-        suit = 'm';
-    }
-    else if (type < 18)
-    {
-        number = (uint8_t)(type - 8);
-        suit = 'p';
-    }
-    else
-    {
-        number = (uint8_t)(type - 17);
-        suit = 's';
-    }
-
-    output[0] = (char)('0' + number);
-    output[1] = suit;
-    if (number == 5 && cj4_web_game.rules.aka_tiles[tile])
-    {
-        output[2] = 'r';
-        output[3] = '\0';
-    }
-    else
-    {
-        output[2] = '\0';
-    }
-    return output;
-}
-
 static void
-cj4_web_mjai_append_event(cj4_web_json_writer *event)
+cj4_web_mjai_append_bytes(const char *data, size_t length, uint8_t has_newline)
 {
     size_t needed;
 
-    if (!event->valid)
+    if (!data || length == 0)
         return;
-    needed = event->length + 1;
+    needed = length + (has_newline ? 0 : 1);
     if (cj4_web_game.mjai_length + needed >= sizeof(cj4_web_mjai_log_buffer))
         return;
 
     memcpy(
         cj4_web_mjai_log_buffer + cj4_web_game.mjai_length,
-        event->data,
-        event->length);
-    cj4_web_game.mjai_length += event->length;
-    cj4_web_mjai_log_buffer[cj4_web_game.mjai_length++] = '\n';
+        data,
+        length);
+    cj4_web_game.mjai_length += length;
+    if (!has_newline)
+        cj4_web_mjai_log_buffer[cj4_web_game.mjai_length++] = '\n';
     cj4_web_mjai_log_buffer[cj4_web_game.mjai_length] = '\0';
     cj4_web_game.mjai_event_count++;
 }
 
-static void
-cj4_web_mjai_write_tile_string(cj4_web_json_writer *writer, cj4_tile_id tile)
+static uint8_t
+cj4_web_mjai_convert_tile(cj4_tile_id tile, cj4_mjai_tile *output)
 {
-    char name[4];
-    cj4_web_json_append(writer, "\"%s\"", cj4_web_mjai_tile_name(tile, name));
+    return cj4_mjai_tile_from_cjong4(tile, &cj4_web_game.rules, output) == CJ4_MJAI_OK;
+}
+
+static void
+cj4_web_mjai_append_codec_event(const cj4_mjai_event *event)
+{
+    char line[CJ4_WEB_MJAI_EVENT_CAPACITY];
+    size_t length = 0;
+
+    if (cj4_mjai_encode_line(event, line, sizeof(line), &length) != CJ4_MJAI_OK)
+        return;
+    cj4_web_mjai_append_bytes(line, length, 1);
 }
 
 static void
@@ -581,25 +548,6 @@ cj4_web_mjai_write_scores(cj4_web_json_writer *writer, const cj4_mahjong *state)
 }
 
 static void
-cj4_web_mjai_write_deltas(
-    cj4_web_json_writer *writer,
-    const cj4_mahjong *before,
-    const cj4_mahjong *after)
-{
-    cj4_web_json_append(writer, "[");
-    for (cj4_player player = 0; player < CJ4_PLAYER_COUNT; ++player)
-    {
-        if (player)
-            cj4_web_json_append(writer, ",");
-        cj4_web_json_append(
-            writer,
-            "%d",
-            (int)(after->scores[player] - before->scores[player]));
-    }
-    cj4_web_json_append(writer, "]");
-}
-
-static void
 cj4_web_mjai_start_game(void)
 {
     char line[CJ4_WEB_MJAI_EVENT_CAPACITY];
@@ -608,41 +556,33 @@ cj4_web_mjai_start_game(void)
     cj4_web_json_append(
         &event,
         "{\"type\":\"start_game\",\"names\":[\"P1\",\"P2\",\"P3\",\"P4\"]}");
-    cj4_web_mjai_append_event(&event);
+    if (event.valid)
+        cj4_web_mjai_append_bytes(event.data, event.length, 0);
 }
 
 static void
 cj4_web_mjai_start_kyoku(const cj4_mahjong *state)
 {
-    char line[CJ4_WEB_MJAI_EVENT_CAPACITY];
-    cj4_web_json_writer event = {line, sizeof(line), 0, 1};
+    cj4_mjai_event event = cj4_mjai_event_init(CJ4_MJAI_EVENT_START_KYOKU);
     cj4_dora_indicator_list dora =
         cj4_location_collect_dora_indicators(state->locations);
 
-    cj4_web_json_append(&event, "{\"type\":\"start_kyoku\",\"bakaze\":");
-    cj4_web_mjai_write_tile_string(
-        &event,
-        cj4_tile_make((cj4_tile_type)(27 + state->round_wind), 0));
-    cj4_web_json_append(&event, ",\"dora_marker\":");
-    cj4_web_mjai_write_tile_string(&event, dora.items[0]);
-    cj4_web_json_append(
-        &event,
-        ",\"kyoku\":%u,\"honba\":%u,\"kyotaku\":%u,\"oya\":%u,\"scores\":",
-        (unsigned)(state->dealer + 1),
-        (unsigned)state->honba,
-        (unsigned)state->riichi_sticks,
-        (unsigned)state->dealer);
-    cj4_web_mjai_write_scores(&event, state);
-    cj4_web_json_append(&event, ",\"tehais\":[");
+    event.bakaze.type = (cj4_tile_type)(27 + state->round_wind);
+    event.bakaze.red = 0;
+    event.bakaze.hidden = 0;
+    if (!cj4_web_mjai_convert_tile(dora.items[0], &event.dora_marker))
+        return;
+    event.kyoku = (uint8_t)(state->dealer + 1);
+    event.honba = state->honba;
+    event.kyotaku = state->riichi_sticks;
+    event.oya = (int8_t)state->dealer;
+
     for (cj4_player player = 0; player < CJ4_PLAYER_COUNT; ++player)
     {
         cj4_hand hand = cj4_location_collect_hand(state->locations, player);
-        uint8_t written = 0;
         uint8_t skipped_draw = 0;
 
-        if (player)
-            cj4_web_json_append(&event, ",");
-        cj4_web_json_append(&event, "[");
+        event.scores[player] = state->scores[player];
         for (uint8_t index = 0; index < hand.count; ++index)
         {
             if (player == state->dealer && !skipped_draw && hand.items[index] == state->draw_tile)
@@ -650,150 +590,126 @@ cj4_web_mjai_start_kyoku(const cj4_mahjong *state)
                 skipped_draw = 1;
                 continue;
             }
-            if (written++)
-                cj4_web_json_append(&event, ",");
-            cj4_web_mjai_write_tile_string(&event, hand.items[index]);
+            if (event.tehai_counts[player] >= CJ4_MJAI_TEHAI_CAPACITY ||
+                !cj4_web_mjai_convert_tile(
+                    hand.items[index],
+                    &event.tehais[player][event.tehai_counts[player]]))
+                return;
+            event.tehai_counts[player]++;
         }
-        cj4_web_json_append(&event, "]");
     }
-    cj4_web_json_append(&event, "]}");
-    cj4_web_mjai_append_event(&event);
+    cj4_web_mjai_append_codec_event(&event);
 }
 
 static void
 cj4_web_mjai_tsumo(cj4_player actor, cj4_tile_id tile)
 {
-    char line[CJ4_WEB_MJAI_EVENT_CAPACITY];
-    cj4_web_json_writer event = {line, sizeof(line), 0, 1};
+    cj4_mjai_event event = cj4_mjai_event_init(CJ4_MJAI_EVENT_TSUMO);
 
-    cj4_web_json_append(&event, "{\"type\":\"tsumo\",\"actor\":%u,\"pai\":", (unsigned)actor);
-    cj4_web_mjai_write_tile_string(&event, tile);
-    cj4_web_json_append(&event, "}");
-    cj4_web_mjai_append_event(&event);
+    event.actor = (int8_t)actor;
+    if (cj4_web_mjai_convert_tile(tile, &event.pai))
+        cj4_web_mjai_append_codec_event(&event);
 }
 
 static void
-cj4_web_mjai_simple_actor_event(const char *type, cj4_player actor)
+cj4_web_mjai_simple_actor_event(cj4_mjai_event_type type, cj4_player actor)
 {
-    char line[CJ4_WEB_MJAI_EVENT_CAPACITY];
-    cj4_web_json_writer event = {line, sizeof(line), 0, 1};
+    cj4_mjai_event event = cj4_mjai_event_init(type);
 
-    cj4_web_json_append(
-        &event,
-        "{\"type\":\"%s\",\"actor\":%u}",
-        type,
-        (unsigned)actor);
-    cj4_web_mjai_append_event(&event);
+    event.actor = (int8_t)actor;
+    cj4_web_mjai_append_codec_event(&event);
 }
 
 static void
 cj4_web_mjai_dahai(cj4_player actor, const cj4_discard *discard)
 {
-    char line[CJ4_WEB_MJAI_EVENT_CAPACITY];
-    cj4_web_json_writer event = {line, sizeof(line), 0, 1};
+    cj4_mjai_event event = cj4_mjai_event_init(CJ4_MJAI_EVENT_DAHAI);
 
     if (discard->is_riichi)
-        cj4_web_mjai_simple_actor_event("reach", actor);
-    cj4_web_json_append(&event, "{\"type\":\"dahai\",\"actor\":%u,\"pai\":", (unsigned)actor);
-    cj4_web_mjai_write_tile_string(&event, discard->tile);
-    cj4_web_json_append(
-        &event,
-        ",\"tsumogiri\":%s}",
-        discard->is_tsumogiri ? "true" : "false");
-    cj4_web_mjai_append_event(&event);
+        cj4_web_mjai_simple_actor_event(CJ4_MJAI_EVENT_REACH, actor);
+    event.actor = (int8_t)actor;
+    event.tsumogiri = discard->is_tsumogiri;
+    if (cj4_web_mjai_convert_tile(discard->tile, &event.pai))
+        cj4_web_mjai_append_codec_event(&event);
 }
 
 static void
 cj4_web_mjai_meld(cj4_player actor, const cj4_meld *meld)
 {
-    char line[CJ4_WEB_MJAI_EVENT_CAPACITY];
-    cj4_web_json_writer event = {line, sizeof(line), 0, 1};
-    const char *type = meld->type == CJ4_MELD_CHI ? "chi" :
-                       meld->type == CJ4_MELD_PON ? "pon" : "daiminkan";
+    cj4_mjai_event_type type = meld->type == CJ4_MELD_CHI ? CJ4_MJAI_EVENT_CHI :
+                               meld->type == CJ4_MELD_PON ? CJ4_MJAI_EVENT_PON :
+                                                           CJ4_MJAI_EVENT_DAIMINKAN;
+    cj4_mjai_event event = cj4_mjai_event_init(type);
     cj4_tile_id called = meld->tiles[meld->called_index];
 
-    cj4_web_json_append(
-        &event,
-        "{\"type\":\"%s\",\"actor\":%u,\"target\":%u,\"pai\":",
-        type,
-        (unsigned)actor,
-        (unsigned)meld->from_player);
-    cj4_web_mjai_write_tile_string(&event, called);
-    cj4_web_json_append(&event, ",\"consumed\":[");
-    for (uint8_t index = 0, written = 0; index < meld->size; ++index)
+    event.actor = (int8_t)actor;
+    event.target = (int8_t)meld->from_player;
+    if (!cj4_web_mjai_convert_tile(called, &event.pai))
+        return;
+    for (uint8_t index = 0; index < meld->size; ++index)
     {
         if (index == meld->called_index)
             continue;
-        if (written++)
-            cj4_web_json_append(&event, ",");
-        cj4_web_mjai_write_tile_string(&event, meld->tiles[index]);
+        if (!cj4_web_mjai_convert_tile(
+                meld->tiles[index],
+                &event.consumed[event.consumed_count]))
+            return;
+        event.consumed_count++;
     }
-    cj4_web_json_append(&event, "]}");
-    cj4_web_mjai_append_event(&event);
+    cj4_web_mjai_append_codec_event(&event);
 }
 
 static void
 cj4_web_mjai_ankan(cj4_player actor, const cj4_mahjong *state)
 {
-    char line[CJ4_WEB_MJAI_EVENT_CAPACITY];
-    cj4_web_json_writer event = {line, sizeof(line), 0, 1};
+    cj4_mjai_event event = cj4_mjai_event_init(CJ4_MJAI_EVENT_ANKAN);
 
-    cj4_web_json_append(&event, "{\"type\":\"ankan\",\"actor\":%u,\"consumed\":[", (unsigned)actor);
+    event.actor = (int8_t)actor;
     for (uint8_t index = 0; index < CJ4_TILE_PER_TYPE; ++index)
-    {
-        if (index)
-            cj4_web_json_append(&event, ",");
-        cj4_web_mjai_write_tile_string(&event, state->pending_ankan_tiles[index]);
-    }
-    cj4_web_json_append(&event, "]}");
-    cj4_web_mjai_append_event(&event);
+        if (!cj4_web_mjai_convert_tile(
+                state->pending_ankan_tiles[index],
+                &event.consumed[event.consumed_count++]))
+            return;
+    cj4_web_mjai_append_codec_event(&event);
 }
 
 static void
 cj4_web_mjai_kakan(cj4_player actor, const cj4_mahjong *previous, cj4_tile_id tile)
 {
-    char line[CJ4_WEB_MJAI_EVENT_CAPACITY];
-    cj4_web_json_writer event = {line, sizeof(line), 0, 1};
+    cj4_mjai_event event = cj4_mjai_event_init(CJ4_MJAI_EVENT_KAKAN);
     cj4_meld_list melds = cj4_location_collect_melds(previous->locations, actor);
     cj4_tile_type type = cj4_tile_get_type(tile);
 
-    cj4_web_json_append(&event, "{\"type\":\"kakan\",\"actor\":%u,\"pai\":", (unsigned)actor);
-    cj4_web_mjai_write_tile_string(&event, tile);
-    cj4_web_json_append(&event, ",\"consumed\":[");
+    event.actor = (int8_t)actor;
+    if (!cj4_web_mjai_convert_tile(tile, &event.pai))
+        return;
     for (uint8_t meld_index = 0; meld_index < melds.count; ++meld_index)
     {
         const cj4_meld *meld = &melds.items[meld_index];
         if (meld->type != CJ4_MELD_PON || cj4_tile_get_type(meld->tiles[0]) != type)
             continue;
         for (uint8_t index = 0; index < meld->size; ++index)
-        {
-            if (index)
-                cj4_web_json_append(&event, ",");
-            cj4_web_mjai_write_tile_string(&event, meld->tiles[index]);
-        }
+            if (!cj4_web_mjai_convert_tile(
+                    meld->tiles[index],
+                    &event.consumed[event.consumed_count++]))
+                return;
         break;
     }
-    cj4_web_json_append(&event, "]}");
-    cj4_web_mjai_append_event(&event);
+    cj4_web_mjai_append_codec_event(&event);
 }
 
 static void
 cj4_web_mjai_dora(cj4_tile_id tile)
 {
-    char line[CJ4_WEB_MJAI_EVENT_CAPACITY];
-    cj4_web_json_writer event = {line, sizeof(line), 0, 1};
+    cj4_mjai_event event = cj4_mjai_event_init(CJ4_MJAI_EVENT_DORA);
 
-    cj4_web_json_append(&event, "{\"type\":\"dora\",\"dora_marker\":");
-    cj4_web_mjai_write_tile_string(&event, tile);
-    cj4_web_json_append(&event, "}");
-    cj4_web_mjai_append_event(&event);
+    if (cj4_web_mjai_convert_tile(tile, &event.pai))
+        cj4_web_mjai_append_codec_event(&event);
 }
 
 static void
 cj4_web_mjai_round_end(const cj4_mahjong *state)
 {
-    char line[CJ4_WEB_MJAI_EVENT_CAPACITY];
-    cj4_web_json_writer event;
     cj4_round_end_type type = cj4_state_round_end_type(state);
     cj4_mahjong settled = cj4_do_settle(*state, &cj4_web_game.rules);
 
@@ -801,19 +717,16 @@ cj4_web_mjai_round_end(const cj4_mahjong *state)
     {
         for (cj4_player actor = 0; actor < CJ4_PLAYER_COUNT; ++actor)
         {
+            cj4_mjai_event event = cj4_mjai_event_init(CJ4_MJAI_EVENT_HORA);
             if (!cj4_state_is_winner(state, actor))
                 continue;
-            event = (cj4_web_json_writer){line, sizeof(line), 0, 1};
-            cj4_web_json_append(
-                &event,
-                "{\"type\":\"hora\",\"actor\":%u,\"target\":%u,\"pai\":",
-                (unsigned)actor,
-                (unsigned)(type == CJ4_ROUND_END_TSUMO
-                               ? actor
-                               : cj4_state_current_player(state)));
-            cj4_web_mjai_write_tile_string(&event, state->winning_tile);
-            cj4_web_json_append(&event, "}");
-            cj4_web_mjai_append_event(&event);
+            event.actor = (int8_t)actor;
+            event.target = (int8_t)(type == CJ4_ROUND_END_TSUMO
+                                        ? actor
+                                        : cj4_state_current_player(state));
+            if (!cj4_web_mjai_convert_tile(state->winning_tile, &event.pai))
+                return;
+            cj4_web_mjai_append_codec_event(&event);
         }
     }
     else
@@ -823,16 +736,20 @@ cj4_web_mjai_round_end(const cj4_mahjong *state)
         const char *reason = type == CJ4_ROUND_END_EXHAUSTIVE_DRAW
                                  ? "fanpai"
                                  : reasons[cj4_state_abortive_reason(state)];
-        event = (cj4_web_json_writer){line, sizeof(line), 0, 1};
-        cj4_web_json_append(&event, "{\"type\":\"ryukyoku\",\"reason\":\"%s\",\"deltas\":", reason);
-        cj4_web_mjai_write_deltas(&event, state, &settled);
-        cj4_web_json_append(&event, "}");
-        cj4_web_mjai_append_event(&event);
+        cj4_mjai_event event = cj4_mjai_event_init(CJ4_MJAI_EVENT_RYUKYOKU);
+
+        event.has_reason = 1;
+        (void)snprintf(event.reason, sizeof(event.reason), "%s", reason);
+        event.has_deltas = 1;
+        for (cj4_player player = 0; player < CJ4_PLAYER_COUNT; ++player)
+            event.deltas[player] = settled.scores[player] - state->scores[player];
+        cj4_web_mjai_append_codec_event(&event);
     }
 
-    event = (cj4_web_json_writer){line, sizeof(line), 0, 1};
-    cj4_web_json_append(&event, "{\"type\":\"end_kyoku\"}");
-    cj4_web_mjai_append_event(&event);
+    {
+        cj4_mjai_event event = cj4_mjai_event_init(CJ4_MJAI_EVENT_END_KYOKU);
+        cj4_web_mjai_append_codec_event(&event);
+    }
 }
 
 static void
@@ -844,7 +761,8 @@ cj4_web_mjai_end_game(const cj4_mahjong *state)
     cj4_web_json_append(&event, "{\"type\":\"end_game\",\"scores\":");
     cj4_web_mjai_write_scores(&event, state);
     cj4_web_json_append(&event, "}");
-    cj4_web_mjai_append_event(&event);
+    if (event.valid)
+        cj4_web_mjai_append_bytes(event.data, event.length, 0);
 }
 
 static void
@@ -881,7 +799,7 @@ cj4_web_record_transition(const cj4_mahjong *previous, const cj4_mahjong *next)
                 cj4_web_mjai_meld(player, meld);
         }
         if (!cj4_state_is_riichi(previous, player) && cj4_state_is_riichi(next, player))
-            cj4_web_mjai_simple_actor_event("reach_accepted", player);
+            cj4_web_mjai_simple_actor_event(CJ4_MJAI_EVENT_REACH_ACCEPTED, player);
     }
 
     if (next_phase == CJ4_PHASE_ANKAN_RESOLVE &&

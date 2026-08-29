@@ -1,4 +1,4 @@
-import createCjong4WebModule from "./cjong4-web.js?v=17";
+import createCjong4WebModule from "./cjong4-web.js?v=18";
 
 const WINDS = ["東", "南", "西", "北"];
 const RULE_GROUPS = [
@@ -777,7 +777,7 @@ function showFailure(error, message = "Wasmの読み込みに失敗") {
 async function main() {
   try {
     wasmModule = await createCjong4WebModule({
-      locateFile: (path) => path.endsWith(".wasm") ? `${path}?v=17` : path,
+      locateFile: (path) => path.endsWith(".wasm") ? `${path}?v=18` : path,
     });
     const pointer = wasmModule._cj4_web_bootstrap_json();
     const raw = wasmModule.UTF8ToString(pointer);

@@ -1,8 +1,29 @@
 #include <cjong4/web/api.h>
+#include <cjong4/mjai.h>
 
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+
+static void
+assert_supported_mjai_lines_decode(const char *jsonl)
+{
+    const char *line = jsonl;
+
+    while (*line)
+    {
+        const char *end = strchr(line, '\n');
+        size_t length = end ? (size_t)(end - line + 1) : strlen(line);
+        cj4_mjai_event event;
+
+        if (strstr(line, "\"type\":\"start_game\"") != line + 1 &&
+            strstr(line, "\"type\":\"end_game\"") != line + 1)
+            assert(cj4_mjai_decode_line(line, length, &event) == CJ4_MJAI_OK);
+        if (!end)
+            break;
+        line = end + 1;
+    }
+}
 
 int
 main(void)
@@ -50,6 +71,7 @@ main(void)
     assert(strstr(mjai, "{\"type\":\"tsumo\",\"actor\":0") != NULL);
     assert(strstr(mjai, "\"tehais\":[[") != NULL);
     assert(strstr(mjai, "request_id") == NULL);
+    assert_supported_mjai_lines_decode(mjai);
     assert(strlen(mjai) < sizeof(initial_mjai));
     strcpy(initial_mjai, mjai);
     {
@@ -101,6 +123,7 @@ main(void)
     assert(strstr(mjai, "{\"type\":\"end_kyoku\"}") != NULL);
     assert(strstr(mjai, "{\"type\":\"hora\"") != NULL);
     assert(strstr(mjai, "{\"type\":\"end_game\"") != NULL);
+    assert_supported_mjai_lines_decode(mjai);
     assert(cj4_web_game_rewind(0) == 1);
     assert(strstr(
                cj4_web_state_json(),
