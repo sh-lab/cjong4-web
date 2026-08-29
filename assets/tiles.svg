@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Original cjong4-web tile artwork.
+  Copyright (c) 2026 sh-lab. Licensed under the MIT License.
+  No third-party artwork or web fonts are used.
+-->
+<svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <g id="tile-shell">
+      <rect x="1" y="1" width="70" height="98" rx="8" fill="#fffdf5" stroke="#d8cfbb" stroke-width="2"/>
+    </g>
+
+    <g id="pin-blue">
+      <circle r="6.2" fill="#f8fbff" stroke="#17689a" stroke-width="2"/>
+      <circle r="3.6" fill="none" stroke="#61a8c4" stroke-width="1.2"/>
+      <circle r="1.25" fill="#17689a"/>
+    </g>
+    <g id="pin-red">
+      <circle r="6.2" fill="#fff8f5" stroke="#ba3030" stroke-width="2"/>
+      <circle r="3.6" fill="none" stroke="#e27767" stroke-width="1.2"/>
+      <circle r="1.25" fill="#ba3030"/>
+    </g>
+    <g id="pin-green">
+      <circle r="6.2" fill="#f7fcf6" stroke="#25804d" stroke-width="2"/>
+      <circle r="3.6" fill="none" stroke="#67aa78" stroke-width="1.2"/>
+      <circle r="1.25" fill="#25804d"/>
+    </g>
+
+    <g id="bamboo-green">
+      <rect x="-3.2" y="-11" width="6.4" height="22" rx="3" fill="#2e8a50"/>
+      <path d="M-3 0H3" stroke="#e4f0c7" stroke-width="1.5"/>
+      <path d="M0-9V9" stroke="#63b66d" stroke-width="1"/>
+    </g>
+    <g id="bamboo-red">
+      <rect x="-3.2" y="-11" width="6.4" height="22" rx="3" fill="#c23a36"/>
+      <path d="M-3 0H3" stroke="#f6d5ca" stroke-width="1.5"/>
+      <path d="M0-9V9" stroke="#e57b68" stroke-width="1"/>
+    </g>
+
+    <!-- Characters -->
+    <symbol id="tile-1m" viewBox="0 0 72 100">
+      <title>一萬</title><use href="#tile-shell"/>
+      <text x="36" y="49" text-anchor="middle" font-size="38" font-weight="700" fill="#173d64" font-family="serif">一</text>
+      <text x="36" y="78" text-anchor="middle" font-size="25" font-weight="700" fill="#b72e2e" font-family="serif">萬</text>
+    </symbol>
+    <symbol id="tile-2m" viewBox="0 0 72 100">
+      <title>二萬</title><use href="#tile-shell"/>
+      <text x="36" y="49" text-anchor="middle" font-size="38" font-weight="700" fill="#173d64" font-family="serif">二</text>
+      <text x="36" y="78" text-anchor="middle" font-size="25" font-weight="700" fill="#b72e2e" font-family="serif">萬</text>
+    </symbol>
+    <symbol id="tile-3m" viewBox="0 0 72 100">
+      <title>三萬</title><use href="#tile-shell"/>
+      <text x="36" y="49" text-anchor="middle" font-size="38" font-weight="700" fill="#173d64" font-family="serif">三</text>
+      <text x="36" y="78" text-anchor="middle" font-size="25" font-weight="700" fill="#b72e2e" font-family="serif">萬</text>
+    </symbol>
+    <symbol id="tile-4m" viewBox="0 0 72 100">
+      <title>四萬</title><use href="#tile-shell"/>
+      <text x="36" y="49" text-anchor="middle" font-size="38" font-weight="700" fill="#173d64" font-family="serif">四</text>
+      <text x="36" y="78" text-anchor="middle" font-size="25" font-weight="700" fill="#b72e2e" font-family="serif">萬</text>
+    </symbol>
+    <symbol id="tile-5m" viewBox="0 0 72 100">
+      <title>五萬</title><use href="#tile-shell"/>
+      <text x="36" y="49" text-anchor="middle" font-size="38" font-weight="700" fill="#173d64" font-family="serif">五</text>
+      <text x="36" y="78" text-anchor="middle" font-size="25" font-weight="700" fill="#b72e2e" font-family="serif">萬</text>
+    </symbol>
+    <symbol id="tile-6m" viewBox="0 0 72 100">
+      <title>六萬</title><use href="#tile-shell"/>
+      <text x="36" y="49" text-anchor="middle" font-size="38" font-weight="700" fill="#173d64" font-family="serif">六</text>
+      <text x="36" y="78" text-anchor="middle" font-size="25" font-weight="700" fill="#b72e2e" font-family="serif">萬</text>
+    </symbol>
+    <symbol id="tile-7m" viewBox="0 0 72 100">
+      <title>七萬</title><use href="#tile-shell"/>
+      <text x="36" y="49" text-anchor="middle" font-size="38" font-weight="700" fill="#173d64" font-family="serif">七</text>
+      <text x="36" y="78" text-anchor="middle" font-size="25" font-weight="700" fill="#b72e2e" font-family="serif">萬</text>
+    </symbol>
+    <symbol id="tile-8m" viewBox="0 0 72 100">
+      <title>八萬</title><use href="#tile-shell"/>
+      <text x="36" y="49" text-anchor="middle" font-size="38" font-weight="700" fill="#173d64" font-family="serif">八</text>
+      <text x="36" y="78" text-anchor="middle" font-size="25" font-weight="700" fill="#b72e2e" font-family="serif">萬</text>
+    </symbol>
+    <symbol id="tile-9m" viewBox="0 0 72 100">
+      <title>九萬</title><use href="#tile-shell"/>
+      <text x="36" y="49" text-anchor="middle" font-size="38" font-weight="700" fill="#173d64" font-family="serif">九</text>
+      <text x="36" y="78" text-anchor="middle" font-size="25" font-weight="700" fill="#b72e2e" font-family="serif">萬</text>
+    </symbol>
+    <symbol id="tile-0m" viewBox="0 0 72 100">
+      <title>赤五萬</title><use href="#tile-shell"/>
+      <text x="36" y="49" text-anchor="middle" font-size="38" font-weight="700" fill="#c42d32" font-family="serif">五</text>
+      <text x="36" y="78" text-anchor="middle" font-size="25" font-weight="700" fill="#c42d32" font-family="serif">萬</text>
+      <circle cx="58" cy="15" r="3" fill="#c42d32"/>
+    </symbol>
+
+    <!-- Circles -->
+    <symbol id="tile-1p" viewBox="0 0 72 100">
+      <title>一筒</title><use href="#tile-shell"/>
+      <circle cx="36" cy="50" r="22" fill="#f7fbf5" stroke="#25804d" stroke-width="3"/>
+      <circle cx="36" cy="50" r="16" fill="none" stroke="#17689a" stroke-width="3"/>
+      <circle cx="36" cy="50" r="10" fill="none" stroke="#ba3030" stroke-width="3"/>
+      <circle cx="36" cy="50" r="3.5" fill="#25804d"/>
+      <path d="M36 28V72M14 50H58M20.5 34.5l31 31M51.5 34.5l-31 31" stroke="#2d7890" stroke-width="1" opacity=".55"/>
+    </symbol>
+    <symbol id="tile-2p" viewBox="0 0 72 100">
+      <title>二筒</title><use href="#tile-shell"/>
+      <use href="#pin-blue" transform="translate(36 34)"/><use href="#pin-green" transform="translate(36 66)"/>
+    </symbol>
+    <symbol id="tile-3p" viewBox="0 0 72 100">
+      <title>三筒</title><use href="#tile-shell"/>
+      <use href="#pin-blue" transform="translate(24 30)"/><use href="#pin-red" transform="translate(36 50)"/><use href="#pin-green" transform="translate(48 70)"/>
+    </symbol>
+    <symbol id="tile-4p" viewBox="0 0 72 100">
+      <title>四筒</title><use href="#tile-shell"/>
+      <use href="#pin-blue" transform="translate(23 31)"/><use href="#pin-green" transform="translate(49 31)"/>
+      <use href="#pin-green" transform="translate(23 69)"/><use href="#pin-blue" transform="translate(49 69)"/>
+    </symbol>
+    <symbol id="tile-5p" viewBox="0 0 72 100">
+      <title>五筒</title><use href="#tile-shell"/>
+      <use href="#pin-blue" transform="translate(21 27)"/><use href="#pin-green" transform="translate(51 27)"/>
+      <use href="#pin-red" transform="translate(36 50)"/>
+      <use href="#pin-green" transform="translate(21 73)"/><use href="#pin-blue" transform="translate(51 73)"/>
+    </symbol>
+    <symbol id="tile-6p" viewBox="0 0 72 100">
+      <title>六筒</title><use href="#tile-shell"/>
+      <use href="#pin-green" transform="translate(22 25)"/><use href="#pin-green" transform="translate(50 25)"/>
+      <use href="#pin-red" transform="translate(22 50)"/><use href="#pin-red" transform="translate(50 50)"/>
+      <use href="#pin-blue" transform="translate(22 75)"/><use href="#pin-blue" transform="translate(50 75)"/>
+    </symbol>
+    <symbol id="tile-7p" viewBox="0 0 72 100">
+      <title>七筒</title><use href="#tile-shell"/>
+      <use href="#pin-green" transform="translate(19 27)"/><use href="#pin-green" transform="translate(53 27)"/>
+      <use href="#pin-blue" transform="translate(19 50)"/><use href="#pin-red" transform="translate(36 50)"/><use href="#pin-blue" transform="translate(53 50)"/>
+      <use href="#pin-blue" transform="translate(19 73)"/><use href="#pin-blue" transform="translate(53 73)"/>
+    </symbol>
+    <symbol id="tile-8p" viewBox="0 0 72 100">
+      <title>八筒</title><use href="#tile-shell"/>
+      <use href="#pin-blue" transform="translate(22 20)"/><use href="#pin-blue" transform="translate(50 20)"/>
+      <use href="#pin-blue" transform="translate(22 40)"/><use href="#pin-blue" transform="translate(50 40)"/>
+      <use href="#pin-blue" transform="translate(22 60)"/><use href="#pin-blue" transform="translate(50 60)"/>
+      <use href="#pin-blue" transform="translate(22 80)"/><use href="#pin-blue" transform="translate(50 80)"/>
+    </symbol>
+    <symbol id="tile-9p" viewBox="0 0 72 100">
+      <title>九筒</title><use href="#tile-shell"/>
+      <use href="#pin-blue" transform="translate(20 22)"/><use href="#pin-red" transform="translate(36 22)"/><use href="#pin-blue" transform="translate(52 22)"/>
+      <use href="#pin-green" transform="translate(20 50)"/><use href="#pin-red" transform="translate(36 50)"/><use href="#pin-green" transform="translate(52 50)"/>
+      <use href="#pin-blue" transform="translate(20 78)"/><use href="#pin-red" transform="translate(36 78)"/><use href="#pin-blue" transform="translate(52 78)"/>
+    </symbol>
+    <symbol id="tile-0p" viewBox="0 0 72 100">
+      <title>赤五筒</title><use href="#tile-shell"/>
+      <use href="#pin-red" transform="translate(21 27)"/><use href="#pin-red" transform="translate(51 27)"/>
+      <use href="#pin-red" transform="translate(36 50)"/>
+      <use href="#pin-red" transform="translate(21 73)"/><use href="#pin-red" transform="translate(51 73)"/>
+      <circle cx="60" cy="13" r="3" fill="#c42d32"/>
+    </symbol>
+
+    <!-- Bamboos -->
+    <symbol id="tile-1s" viewBox="0 0 72 100">
+      <title>一索</title><use href="#tile-shell"/>
+      <path d="M36 76C19 65 15 43 27 24C29 39 34 46 36 48C38 39 44 29 54 21C55 42 49 61 36 76Z" fill="#2d8c55" stroke="#1c6944" stroke-width="1.5"/>
+      <path d="M36 75C37 57 37 43 39 27" fill="none" stroke="#e5f0c8" stroke-width="2"/>
+      <path d="M36 52C28 49 24 43 21 36M38 45C45 41 49 36 53 30M36 63C28 61 23 57 20 52M37 58C45 55 50 51 54 46" fill="none" stroke="#62b276" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="34" cy="31" r="5" fill="#1c6944"/><circle cx="34" cy="31" r="2" fill="#c23a36"/>
+    </symbol>
+    <symbol id="tile-2s" viewBox="0 0 72 100">
+      <title>二索</title><use href="#tile-shell"/>
+      <use href="#bamboo-green" transform="translate(29 35)"/><use href="#bamboo-green" transform="translate(43 65)"/>
+    </symbol>
+    <symbol id="tile-3s" viewBox="0 0 72 100">
+      <title>三索</title><use href="#tile-shell"/>
+      <use href="#bamboo-green" transform="translate(27 27)"/><use href="#bamboo-green" transform="translate(45 50)"/><use href="#bamboo-green" transform="translate(27 73)"/>
+    </symbol>
+    <symbol id="tile-4s" viewBox="0 0 72 100">
+      <title>四索</title><use href="#tile-shell"/>
+      <use href="#bamboo-green" transform="translate(25 34)"/><use href="#bamboo-green" transform="translate(47 34)"/>
+      <use href="#bamboo-green" transform="translate(25 66)"/><use href="#bamboo-green" transform="translate(47 66)"/>
+    </symbol>
+    <symbol id="tile-5s" viewBox="0 0 72 100">
+      <title>五索</title><use href="#tile-shell"/>
+      <use href="#bamboo-green" transform="translate(23 28)"/><use href="#bamboo-green" transform="translate(49 28)"/>
+      <use href="#bamboo-red" transform="translate(36 50)"/>
+      <use href="#bamboo-green" transform="translate(23 72)"/><use href="#bamboo-green" transform="translate(49 72)"/>
+    </symbol>
+    <symbol id="tile-6s" viewBox="0 0 72 100">
+      <title>六索</title><use href="#tile-shell"/>
+      <use href="#bamboo-green" transform="translate(22 25)"/><use href="#bamboo-green" transform="translate(50 25)"/>
+      <use href="#bamboo-green" transform="translate(22 50)"/><use href="#bamboo-green" transform="translate(50 50)"/>
+      <use href="#bamboo-green" transform="translate(22 75)"/><use href="#bamboo-green" transform="translate(50 75)"/>
+    </symbol>
+    <symbol id="tile-7s" viewBox="0 0 72 100">
+      <title>七索</title><use href="#tile-shell"/>
+      <use href="#bamboo-green" transform="translate(22 27)"/><use href="#bamboo-green" transform="translate(50 27)"/>
+      <use href="#bamboo-green" transform="translate(22 50)"/><use href="#bamboo-red" transform="translate(36 50)"/><use href="#bamboo-green" transform="translate(50 50)"/>
+      <use href="#bamboo-green" transform="translate(22 73)"/><use href="#bamboo-green" transform="translate(50 73)"/>
+    </symbol>
+    <symbol id="tile-8s" viewBox="0 0 72 100">
+      <title>八索</title><use href="#tile-shell"/>
+      <use href="#bamboo-green" transform="translate(20 23)"/><use href="#bamboo-green" transform="translate(36 23)"/><use href="#bamboo-green" transform="translate(52 23)"/>
+      <use href="#bamboo-green" transform="translate(27 50)"/><use href="#bamboo-green" transform="translate(45 50)"/>
+      <use href="#bamboo-green" transform="translate(20 77)"/><use href="#bamboo-green" transform="translate(36 77)"/><use href="#bamboo-green" transform="translate(52 77)"/>
+    </symbol>
+    <symbol id="tile-9s" viewBox="0 0 72 100">
+      <title>九索</title><use href="#tile-shell"/>
+      <use href="#bamboo-green" transform="translate(20 21)"/><use href="#bamboo-red" transform="translate(36 21)"/><use href="#bamboo-green" transform="translate(52 21)"/>
+      <use href="#bamboo-green" transform="translate(20 50)"/><use href="#bamboo-red" transform="translate(36 50)"/><use href="#bamboo-green" transform="translate(52 50)"/>
+      <use href="#bamboo-green" transform="translate(20 79)"/><use href="#bamboo-red" transform="translate(36 79)"/><use href="#bamboo-green" transform="translate(52 79)"/>
+    </symbol>
+    <symbol id="tile-0s" viewBox="0 0 72 100">
+      <title>赤五索</title><use href="#tile-shell"/>
+      <use href="#bamboo-red" transform="translate(23 28)"/><use href="#bamboo-red" transform="translate(49 28)"/>
+      <use href="#bamboo-red" transform="translate(36 50)"/>
+      <use href="#bamboo-red" transform="translate(23 72)"/><use href="#bamboo-red" transform="translate(49 72)"/>
+      <circle cx="60" cy="13" r="3" fill="#c42d32"/>
+    </symbol>
+
+    <!-- Honors: 1z east, 2z south, 3z west, 4z north, 5z white, 6z green, 7z red -->
+    <symbol id="tile-1z" viewBox="0 0 72 100">
+      <title>東</title><use href="#tile-shell"/>
+      <text x="36" y="68" text-anchor="middle" font-size="52" font-weight="700" fill="#173d64" font-family="serif">東</text>
+    </symbol>
+    <symbol id="tile-2z" viewBox="0 0 72 100">
+      <title>南</title><use href="#tile-shell"/>
+      <text x="36" y="68" text-anchor="middle" font-size="52" font-weight="700" fill="#173d64" font-family="serif">南</text>
+    </symbol>
+    <symbol id="tile-3z" viewBox="0 0 72 100">
+      <title>西</title><use href="#tile-shell"/>
+      <text x="36" y="68" text-anchor="middle" font-size="52" font-weight="700" fill="#173d64" font-family="serif">西</text>
+    </symbol>
+    <symbol id="tile-4z" viewBox="0 0 72 100">
+      <title>北</title><use href="#tile-shell"/>
+      <text x="36" y="68" text-anchor="middle" font-size="52" font-weight="700" fill="#173d64" font-family="serif">北</text>
+    </symbol>
+    <symbol id="tile-5z" viewBox="0 0 72 100">
+      <title>白</title><use href="#tile-shell"/>
+    </symbol>
+    <symbol id="tile-6z" viewBox="0 0 72 100">
+      <title>發</title><use href="#tile-shell"/>
+      <text x="36" y="68" text-anchor="middle" font-size="52" font-weight="700" fill="#27814d" font-family="serif">發</text>
+    </symbol>
+    <symbol id="tile-7z" viewBox="0 0 72 100">
+      <title>中</title><use href="#tile-shell"/>
+      <text x="36" y="68" text-anchor="middle" font-size="52" font-weight="700" fill="#c42d32" font-family="serif">中</text>
+    </symbol>
+
+    <symbol id="tile-back" viewBox="0 0 72 100">
+      <title>牌の裏面</title>
+      <rect x="1" y="1" width="70" height="98" rx="8" fill="#245f86"/>
+    </symbol>
+  </defs>
+</svg>

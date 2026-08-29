@@ -1,0 +1,7 @@
+[submodule "external/cjong4-opponent"]
+	path = external/cjong4-opponent
+	url = https://github.com/sh-lab/cjong4-opponent.git
+[submodule "external/cjong4-mjai"]
+	path = external/cjong4-mjai
+	url = https://github.com/sh-lab/cjong4-mjai.git
+	branch = dev/initial

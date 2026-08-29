@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>cjong4-web</title>
+    <meta name="description" content="ブラウザで動作する4人打ち麻雀と視覚的デバッグ環境">
+    <link rel="stylesheet" href="./styles.css?v=@CJ4_WEB_ASSET_VERSION@">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">cjong4 / WebAssembly</p>
+        <h1>4人打ち麻雀</h1>
+      </div>
+      <div id="engine-status" class="status" data-state="loading" role="status">
+        Wasmを読み込み中
+      </div>
+    </header>
+
+    <main>
+      <section class="control-panel" aria-labelledby="game-settings-title">
+        <details class="rules-accordion">
+          <summary>
+            <span id="game-settings-title" class="rules-title">対局設定</span>
+            <span id="rule-summary" class="rules-summary">読み込み中</span>
+          </summary>
+          <div class="rules-body">
+            <div class="wall-settings">
+              <label class="wall-setting" for="wall-mode">
+                <span>
+                  <strong>山の設定</strong>
+                </span>
+                <select id="wall-mode">
+                  <option value="random" selected>ランダム</option>
+                  <option value="preset">プリセット（デバッグ用）</option>
+                </select>
+              </label>
+              <div class="seed-setting">
+                <label for="wall-seed">
+                  <strong>山のシード</strong>
+                  <small>同じ設定とシードで山を再現できます。</small>
+                </label>
+                <div class="seed-input-row">
+                  <input id="wall-seed" type="number" min="1" max="4294967295" step="1" inputmode="numeric">
+                  <button id="regenerate-seed" class="secondary-button" type="button">再生成</button>
+                </div>
+              </div>
+            </div>
+            <div class="rules-toolbar">
+              <p>各項目を個別に変更できます。</p>
+              <button id="reset-rules" class="secondary-button" type="button" disabled>
+                デフォルトに戻す
+              </button>
+            </div>
+            <div id="rule-sections" class="rule-sections" aria-label="対局設定項目"></div>
+          </div>
+        </details>
+
+        <div class="game-start-row">
+          <label class="hand-visibility-setting" for="hide-opponent-hands">
+            <input id="hide-opponent-hands" type="checkbox" checked>
+            <span>人間以外の手牌を隠す</span>
+          </label>
+          <button id="start-game" type="button" disabled>対局開始</button>
+        </div>
+      </section>
+
+      <section class="round-bar" aria-label="局情報">
+        <strong id="round-name">開始前</strong>
+        <span id="round-honba">0本場</span>
+        <span id="round-riichi">供託 0</span>
+        <span id="round-remaining">残り —</span>
+        <span class="round-dora">ドラ表示 <span id="dora-indicators" class="tiles"></span></span>
+        <span id="round-note" class="round-note">対局設定を選んで開始してください</span>
+      </section>
+
+      <section id="action-panel" class="action-panel" aria-live="polite" hidden>
+        <strong id="action-title">行動を選択</strong>
+        <div id="action-buttons" class="action-buttons"></div>
+      </section>
+
+      <div id="settlement-layer" class="settlement-layer" hidden>
+        <section class="settlement-panel" role="dialog" aria-modal="true" aria-labelledby="settlement-title">
+          <header class="settlement-header">
+            <div>
+              <p class="eyebrow">Round result</p>
+              <h2 id="settlement-title">局終了</h2>
+              <p id="settlement-summary" class="settlement-summary"></p>
+            </div>
+            <button id="settlement-close" class="secondary-button" type="button">閉じる</button>
+          </header>
+          <div id="settlement-winners" class="settlement-winners"></div>
+          <div>
+            <h3 class="settlement-score-title">点数移動</h3>
+            <div id="settlement-score-changes" class="settlement-score-changes"></div>
+            <p class="settlement-note">本場・供託を含む清算後の点数です。</p>
+          </div>
+          <div class="settlement-actions">
+            <button id="settlement-next" type="button">次へ進める</button>
+          </div>
+        </section>
+      </div>
+
+      <section id="players" class="players" aria-label="プレイヤー一覧"></section>
+
+      <section class="timeline" aria-labelledby="timeline-title">
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">History</p>
+            <h2 id="timeline-title">対局履歴</h2>
+          </div>
+          <div class="history-actions" aria-label="対局履歴の操作">
+            <output id="history-output" for="history-position">開始前</output>
+            <button id="step-game" type="button" disabled>次へ進める</button>
+            <button id="pause-game" type="button" disabled>一時停止</button>
+            <button id="play-game" type="button" disabled>再生</button>
+          </div>
+        </div>
+        <input id="history-position" type="range" min="0" max="0" value="0" disabled>
+      </section>
+
+      <details class="mjai-panel">
+        <summary>
+          <span>MJAI履歴</span>
+          <span id="mjai-event-count" class="rules-summary">開始前</span>
+        </summary>
+        <div class="mjai-toolbar">
+          <p>1行1JSON（JSON Lines）で出力します。</p>
+          <span id="mjai-copy-status" role="status"></span>
+          <button id="copy-mjai" class="secondary-button" type="button" disabled>コピー</button>
+          <button id="download-mjai" class="secondary-button" type="button" disabled>保存</button>
+        </div>
+        <pre id="mjai-history" aria-label="MJAI JSON Lines">対局開始後に履歴を表示します</pre>
+      </details>
+
+      <details class="debug-panel">
+        <summary>デバッグ情報</summary>
+        <div class="debug-grid">
+          <div><span>API version</span><strong id="api-version">—</strong></div>
+          <div><span>Schema version</span><strong id="schema-version">—</strong></div>
+          <div><span>Engine</span><strong id="engine-ready">—</strong></div>
+        </div>
+        <pre id="raw-bootstrap" aria-label="Wasm bootstrap JSON">Wasmを読み込み中</pre>
+      </details>
+    </main>
+
+    <footer class="site-footer">
+      <a href="./LICENSE.txt">License</a>
+      <a href="./THIRD_PARTY_NOTICES.txt">Third-party notices</a>
+    </footer>
+
+    <script type="module" src="./app.js?v=@CJ4_WEB_ASSET_VERSION@"></script>
+  </body>
+</html>
