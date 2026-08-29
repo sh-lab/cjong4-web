@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(cjong4_web VERSION 0.1.0 LANGUAGES C)
+project(cjong4_web VERSION 0.9.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -47,6 +47,54 @@ endif()
 
 if(EMSCRIPTEN)
     set(CJ4_WEB_SITE_DIR "${CMAKE_CURRENT_BINARY_DIR}/site")
+    set(CJ4_WEB_ASSET_VERSION "" CACHE STRING
+        "Browser asset cache version (defaults to the Git commit)")
+
+    if(NOT CJ4_WEB_ASSET_VERSION)
+        find_package(Git QUIET)
+        if(Git_FOUND)
+            execute_process(
+                COMMAND "${GIT_EXECUTABLE}" rev-parse --short=12 HEAD
+                WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                RESULT_VARIABLE CJ4_WEB_GIT_RESULT
+                OUTPUT_VARIABLE CJ4_WEB_ASSET_VERSION
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
+            )
+            if(CJ4_WEB_GIT_RESULT EQUAL 0)
+                execute_process(
+                    COMMAND "${GIT_EXECUTABLE}" status --porcelain
+                    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                    OUTPUT_VARIABLE CJ4_WEB_GIT_STATUS
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                    ERROR_QUIET
+                )
+                if(CJ4_WEB_GIT_STATUS)
+                    string(TIMESTAMP CJ4_WEB_DIRTY_TIMESTAMP "%Y%m%d%H%M%S" UTC)
+                    string(APPEND CJ4_WEB_ASSET_VERSION "-dirty-${CJ4_WEB_DIRTY_TIMESTAMP}")
+                endif()
+            endif()
+        endif()
+        if(NOT CJ4_WEB_ASSET_VERSION)
+            set(CJ4_WEB_ASSET_VERSION "dev")
+        endif()
+    endif()
+    string(REGEX REPLACE "[^A-Za-z0-9._-]" "-"
+        CJ4_WEB_ASSET_VERSION "${CJ4_WEB_ASSET_VERSION}")
+
+    file(MAKE_DIRECTORY "${CJ4_WEB_SITE_DIR}")
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/web/index.html"
+        "${CJ4_WEB_SITE_DIR}/index.html"
+        @ONLY
+    )
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/web/app.js"
+        "${CJ4_WEB_SITE_DIR}/app.js"
+        @ONLY
+    )
+    message(STATUS "Browser asset version: ${CJ4_WEB_ASSET_VERSION}")
+
     set_target_properties(cjong4_web PROPERTIES
         OUTPUT_NAME "cjong4-web"
         SUFFIX ".js"
@@ -62,9 +110,19 @@ if(EMSCRIPTEN)
         "-sEXPORTED_RUNTIME_METHODS=UTF8ToString"
     )
     add_custom_target(cjong4_web_site ALL
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${CJ4_WEB_SITE_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${CJ4_WEB_SITE_DIR}/licenses"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/web/styles.css"
+            "${CJ4_WEB_SITE_DIR}/styles.css"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE"
+            "${CJ4_WEB_SITE_DIR}/LICENSE.txt"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/THIRD_PARTY_NOTICES.md"
+            "${CJ4_WEB_SITE_DIR}/THIRD_PARTY_NOTICES.txt"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/web" "${CJ4_WEB_SITE_DIR}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/licenses" "${CJ4_WEB_SITE_DIR}/licenses"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${CJ4_WEB_SITE_DIR}/assets"
         DEPENDS cjong4_web

@@ -75,3 +75,5 @@ ctest --test-dir build --output-on-failure
 ## ライセンス
 
 MIT License。Web部分と牌画像は本プロジェクトのオリジナル実装です。
+Wasmツールチェーン由来部分のライセンスは
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)に記載し、公開用ビルドにも同梱します。
