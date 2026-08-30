@@ -114,13 +114,15 @@
           </div>
           <div class="history-actions" aria-label="対局履歴の操作">
             <output id="history-output" for="history-position">開始前</output>
-            <label class="playback-speed" for="playback-speed">
-              <span>再生速度</span>
-              <select id="playback-speed">
-                <option value="0.25">0.25×</option>
-                <option value="0.5">0.5×</option>
-                <option value="1" selected>1×</option>
-                <option value="2">2×</option>
+            <label class="playback-wait" for="playback-wait">
+              <span>再生待ち時間</span>
+              <select id="playback-wait">
+                <option value="0">nowait（待ちなし）</option>
+                <option value="50">50 ms</option>
+                <option value="100" selected>100 ms</option>
+                <option value="250">250 ms</option>
+                <option value="500">500 ms</option>
+                <option value="1000">1000 ms</option>
               </select>
             </label>
             <button id="step-game" type="button" disabled>次へ進める</button>

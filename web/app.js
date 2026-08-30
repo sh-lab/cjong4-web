@@ -151,7 +151,6 @@ const ABORTIVE_DRAW_LABELS = Object.freeze({
   four_kans: "四開槓",
   triple_ron: "三家和",
 });
-const PLAYBACK_INTERVAL_MS = 70;
 const YAKU_LABELS = Object.freeze({
   riichi: "立直", double_riichi: "ダブル立直", ippatsu: "一発",
   menzen_tsumo: "門前清自摸和", tanyao: "断么九", yakuhai_haku: "役牌 白",
@@ -395,7 +394,7 @@ function createActionButton(action) {
 
 function stopPlayback() {
   if (playbackTimer !== undefined) {
-    clearInterval(playbackTimer);
+    clearTimeout(playbackTimer);
     playbackTimer = undefined;
   }
 }
@@ -696,11 +695,57 @@ function stepGame() {
   return result;
 }
 
+function playbackStep() {
+  if (playbackTimer === undefined || !currentState?.active ||
+      currentState.waiting_for_input || currentState.phase === "round_end" ||
+      currentState.phase === "game_end") {
+    stopPlayback();
+    return 0;
+  }
+
+  playbackTimer = undefined;
+  const result = wasmModule._cj4_web_game_step();
+  currentState = readState();
+  const continues = result === 1 && !currentState.waiting_for_input &&
+    currentState.phase !== "round_end" && currentState.phase !== "game_end";
+  if (continues) {
+    const waitMs = Number(document.querySelector("#playback-wait").value);
+    playbackTimer = setTimeout(playbackStep, waitMs);
+  }
+  renderGameState();
+  return result;
+}
+
 function playGame() {
-  if (!currentState?.active || currentState.waiting_for_input || currentState.phase === "game_end") return;
-  const speed = Number(document.querySelector("#playback-speed").value);
-  playbackTimer = setInterval(stepGame, PLAYBACK_INTERVAL_MS / speed);
+  if (!currentState?.active || currentState.waiting_for_input ||
+      currentState.phase === "round_end" || currentState.phase === "game_end" ||
+      playbackTimer !== undefined) return;
+  const waitMs = Number(document.querySelector("#playback-wait").value);
+  playbackTimer = setTimeout(playbackStep, waitMs);
   updateHistoryControls();
+}
+
+function continueAfterSettlement() {
+  stopPlayback();
+  dismissedSettlementHistory = currentState?.history.index ?? -1;
+
+  for (let guard = 0; guard < 3 && ["round_end", "settle"].includes(currentState.phase); guard += 1) {
+    const result = wasmModule._cj4_web_game_step();
+    currentState = readState();
+    if (result !== 1) break;
+  }
+
+  const controller = currentState.players[currentState.current_player]?.controller;
+  const isHumanTurn = ["draw", "after_call"].includes(currentState.phase)
+    && controller === CONTROLLER_IDS.human;
+  if (isHumanTurn && !currentState.waiting_for_input) {
+    wasmModule._cj4_web_game_step();
+    currentState = readState();
+  }
+
+  renderGameState();
+  if (!currentState.waiting_for_input && currentState.phase !== "round_end" &&
+      currentState.phase !== "game_end") playGame();
 }
 
 function startGame() {
@@ -769,7 +814,7 @@ function wireGameControls() {
     updateHistoryControls();
   });
   document.querySelector("#play-game").addEventListener("click", playGame);
-  document.querySelector("#playback-speed").addEventListener("change", () => {
+  document.querySelector("#playback-wait").addEventListener("change", () => {
     if (playbackTimer === undefined) return;
     stopPlayback();
     playGame();
@@ -781,8 +826,7 @@ function wireGameControls() {
     document.querySelector("#settlement-layer").hidden = true;
   });
   document.querySelector("#settlement-next").addEventListener("click", () => {
-    dismissedSettlementHistory = currentState?.history.index ?? -1;
-    stepGame();
+    continueAfterSettlement();
   });
   document.querySelector("#copy-mjai").addEventListener("click", async () => {
     const status = document.querySelector("#mjai-copy-status");
