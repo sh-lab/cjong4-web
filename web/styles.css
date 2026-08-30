@@ -553,6 +553,37 @@ main {
   font-weight: 700;
 }
 
+.settlement-indicators {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #d3ddd7;
+}
+
+.settlement-indicator-row {
+  display: flex;
+  min-height: 33px;
+  align-items: center;
+  gap: 10px;
+}
+
+.settlement-indicator-row > span {
+  flex: 0 0 76px;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.settlement-indicator-row .tiles {
+  color: var(--ink-soft);
+}
+
+.settlement-indicator-row .tile {
+  width: 24px;
+  height: 33px;
+}
+
 .settlement-score-title {
   margin-top: 16px;
   font-size: 0.92rem;
@@ -659,6 +690,22 @@ main {
   font-weight: 700;
 }
 
+.hand-area {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.drawn-tile {
+  flex-wrap: nowrap;
+  margin-left: 14px;
+}
+
+.drawn-tile:empty {
+  display: none;
+}
+
 .tiles {
   display: flex;
   flex-wrap: wrap;
@@ -734,6 +781,20 @@ main {
   min-width: 54px;
   margin-right: 4px;
   text-align: right;
+}
+
+.playback-speed {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.playback-speed select {
+  min-height: 38px;
+  padding-inline: 7px;
 }
 
 .history-actions button {
@@ -994,9 +1055,14 @@ pre {
   }
 
   .history-actions output {
-    grid-column: 1 / -1;
+    grid-column: 1;
     margin-right: 0;
     text-align: left;
+  }
+
+  .playback-speed {
+    grid-column: 2 / -1;
+    justify-content: flex-end;
   }
 
   .history-actions button {
