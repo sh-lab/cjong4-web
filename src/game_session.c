@@ -42,7 +42,9 @@ enum
     CJ4_WEB_MJAI_LOG_CAPACITY = 2097152,
     CJ4_WEB_MJAI_EVENT_CAPACITY = 4096,
     CJ4_WEB_WALL_RANDOM = 0,
-    CJ4_WEB_WALL_PRESET = 1,
+    CJ4_WEB_WALL_ID_ORDER = 1,
+    CJ4_WEB_WALL_YAKUMAN_NORTH = 2,
+    CJ4_WEB_WALL_MODE_COUNT = 3,
     CJ4_WEB_PENDING_NONE = 0,
     CJ4_WEB_PENDING_SINGLE = 1,
     CJ4_WEB_PENDING_REACTION = 2
@@ -172,13 +174,101 @@ cj4_web_random_next(void)
 }
 
 static void
+cj4_web_place_wall_tile(
+    cj4_tile_id wall[CJ4_TILE_ID_COUNT],
+    uint8_t position,
+    cj4_tile_id tile)
+{
+    for (uint16_t source = position; source < CJ4_TILE_ID_COUNT; ++source)
+    {
+        if (wall[source] != tile)
+            continue;
+
+        wall[source] = wall[position];
+        wall[position] = tile;
+        return;
+    }
+}
+
+static void
+cj4_web_fill_yakuman_north_wall(cj4_tile_id wall[CJ4_TILE_ID_COUNT])
+{
+    const cj4_tile_id hands[CJ4_PLAYER_COUNT][13] = {
+        {
+            /* P1: pure nine gates in manzu. */
+            cj4_tile_make(0, 0), cj4_tile_make(0, 1), cj4_tile_make(0, 2),
+            cj4_tile_make(1, 0), cj4_tile_make(2, 0), cj4_tile_make(3, 0),
+            cj4_tile_make(4, 3), cj4_tile_make(5, 0), cj4_tile_make(6, 0),
+            cj4_tile_make(7, 0),
+            cj4_tile_make(8, 0), cj4_tile_make(8, 1), cj4_tile_make(8, 2),
+        },
+        {
+            /* P2: thirteen unique terminals and honors. */
+            cj4_tile_make(0, 3), cj4_tile_make(8, 3),
+            cj4_tile_make(9, 0), cj4_tile_make(17, 0),
+            cj4_tile_make(18, 0), cj4_tile_make(26, 0),
+            cj4_tile_make(27, 0), cj4_tile_make(28, 0),
+            cj4_tile_make(29, 0), cj4_tile_make(30, 1),
+            cj4_tile_make(31, 0), cj4_tile_make(32, 0), cj4_tile_make(33, 0),
+        },
+        {
+            /* P3: small four winds and four concealed triplets, waiting on north. */
+            cj4_tile_make(9, 1), cj4_tile_make(9, 2), cj4_tile_make(9, 3),
+            cj4_tile_make(27, 1), cj4_tile_make(27, 2), cj4_tile_make(27, 3),
+            cj4_tile_make(28, 1), cj4_tile_make(28, 2), cj4_tile_make(28, 3),
+            cj4_tile_make(29, 1), cj4_tile_make(29, 2), cj4_tile_make(29, 3),
+            cj4_tile_make(30, 2),
+        },
+        {
+            /* P4: big three dragons and four concealed triplets, waiting on north. */
+            cj4_tile_make(10, 0), cj4_tile_make(10, 1), cj4_tile_make(10, 2),
+            cj4_tile_make(31, 1), cj4_tile_make(31, 2), cj4_tile_make(31, 3),
+            cj4_tile_make(32, 1), cj4_tile_make(32, 2), cj4_tile_make(32, 3),
+            cj4_tile_make(33, 1), cj4_tile_make(33, 2), cj4_tile_make(33, 3),
+            cj4_tile_make(30, 3),
+        },
+    };
+    uint8_t hand_positions[CJ4_PLAYER_COUNT] = {0};
+    uint8_t wall_position = 0;
+
+    for (uint8_t group = 0; group < 3; ++group)
+    {
+        for (cj4_player player = 0; player < CJ4_PLAYER_COUNT; ++player)
+        {
+            for (uint8_t tile = 0; tile < 4; ++tile)
+            {
+                cj4_web_place_wall_tile(
+                    wall,
+                    wall_position++,
+                    hands[player][hand_positions[player]++]);
+            }
+        }
+    }
+    for (cj4_player player = 0; player < CJ4_PLAYER_COUNT; ++player)
+    {
+        cj4_web_place_wall_tile(
+            wall,
+            wall_position++,
+            hands[player][hand_positions[player]++]);
+    }
+
+    /* P1 draws the fourth north as the surplus tile. */
+    cj4_web_place_wall_tile(wall, wall_position, cj4_tile_make(30, 0));
+}
+
+static void
 cj4_web_fill_wall(cj4_tile_id wall[CJ4_TILE_ID_COUNT])
 {
     for (uint16_t index = 0; index < CJ4_TILE_ID_COUNT; ++index)
         wall[index] = (cj4_tile_id)index;
 
-    if (cj4_web_game.wall_mode == CJ4_WEB_WALL_PRESET)
+    if (cj4_web_game.wall_mode == CJ4_WEB_WALL_ID_ORDER)
         return;
+    if (cj4_web_game.wall_mode == CJ4_WEB_WALL_YAKUMAN_NORTH)
+    {
+        cj4_web_fill_yakuman_north_wall(wall);
+        return;
+    }
 
     for (int index = CJ4_TILE_ID_COUNT - 1; index > 0; --index)
     {
@@ -1149,7 +1239,8 @@ cj4_web_game_start(
 
     if (!cj4_web_rules_initialized)
         cj4_web_rules_reset();
-    if (!cj4_rules_validate(&cj4_web_configured_rules) || wall_mode > CJ4_WEB_WALL_PRESET)
+    if (!cj4_rules_validate(&cj4_web_configured_rules) ||
+        wall_mode >= CJ4_WEB_WALL_MODE_COUNT)
         return 0;
     for (uint8_t player = 0; player < CJ4_PLAYER_COUNT; ++player)
         if (controllers[player] >= CJ4_WEB_CONTROLLER_COUNT)
@@ -1334,7 +1425,7 @@ cj4_web_state_json(void)
         (void)snprintf(
             cj4_web_state_json_buffer,
             sizeof(cj4_web_state_json_buffer),
-            "{\"schema_version\":4,\"active\":false}");
+            "{\"schema_version\":5,\"active\":false}");
         return cj4_web_state_json_buffer;
     }
 
@@ -1347,7 +1438,7 @@ cj4_web_state_json(void)
 
     cj4_web_json_append(
         &writer,
-        "{\"schema_version\":4,\"active\":true,\"generation\":%u,"
+        "{\"schema_version\":5,\"active\":true,\"generation\":%u,"
         "\"seed\":%u,\"wall_mode\":%u,\"phase\":\"%s\","
         "\"current_player\":%u,\"dealer\":%u,\"round_wind\":%u,"
         "\"honba\":%u,\"riichi_sticks\":%u,\"remaining\":%u,"
@@ -1386,7 +1477,13 @@ cj4_web_state_json(void)
         cj4_web_json_append(&writer, "}");
     }
 
-    cj4_web_json_append(&writer, "],\"dora_indicators\":[");
+    cj4_web_json_append(&writer, "],\"draw_tile\":");
+    if (cj4_tile_id_is_valid(cj4_web_game.state.draw_tile))
+        cj4_web_write_tile(&writer, cj4_web_game.state.draw_tile);
+    else
+        cj4_web_json_append(&writer, "null");
+
+    cj4_web_json_append(&writer, ",\"dora_indicators\":[");
     cj4_dora_indicator_list dora =
         cj4_location_collect_dora_indicators(cj4_web_game.state.locations);
     uint8_t visible_dora_count = cj4_web_game.state.dora_count;
@@ -1428,7 +1525,7 @@ cj4_web_state_json(void)
         (void)snprintf(
             cj4_web_state_json_buffer,
             sizeof(cj4_web_state_json_buffer),
-            "{\"schema_version\":4,\"active\":false,\"error\":\"snapshot_too_large\"}");
+            "{\"schema_version\":5,\"active\":false,\"error\":\"snapshot_too_large\"}");
     return cj4_web_state_json_buffer;
 }
 

@@ -46,7 +46,7 @@ extern "C"
     uint32_t
     cj4_web_rule_set(uint32_t field_index, int32_t value);
 
-    /* Starts a new game. wall_mode: 0=random, 1=debug preset. */
+    /* Starts a new game. wall_mode: 0=random, 1=tile ID order, 2=yakuman north wait. */
     uint32_t
     cj4_web_game_start(
         uint32_t seed,

@@ -151,6 +151,7 @@ const ABORTIVE_DRAW_LABELS = Object.freeze({
   four_kans: "四開槓",
   triple_ron: "三家和",
 });
+const PLAYBACK_INTERVAL_MS = 70;
 const YAKU_LABELS = Object.freeze({
   riichi: "立直", double_riichi: "ダブル立直", ippatsu: "一発",
   menzen_tsumo: "門前清自摸和", tanyao: "断么九", yakuhai_haku: "役牌 白",
@@ -222,7 +223,7 @@ function renderPlayers(opponents) {
       <div class="player-state">
         <span class="meld-state">門前</span><span class="riichi-state">リーチなし</span><span class="turn-state">待機</span>
       </div>
-      <div class="tile-row"><span class="row-label">手牌</span><div class="tiles hand"></div><div class="tiles melds"></div></div>
+      <div class="tile-row"><span class="row-label">手牌</span><div class="hand-area"><div class="tiles hand"></div><div class="tiles drawn-tile"></div></div><div class="tiles melds"></div></div>
       <div class="tile-row"><span class="row-label">捨て牌</span><div class="tiles discards"></div></div>
     `;
     players.append(panel);
@@ -320,7 +321,7 @@ function initializeRules(rules) {
   });
   reset.addEventListener("click", () => {
     applyRules(defaults);
-    wallMode.value = "random";
+    wallMode.value = "0";
     setRandomSeed();
     summary.textContent = "デフォルト";
   });
@@ -466,16 +467,22 @@ function renderPlayer(player) {
   panel.querySelector(".player-controller").value = CONTROLLER_NAMES[player.controller];
 
   const hand = panel.querySelector(".hand");
+  const drawnTile = panel.querySelector(".drawn-tile");
   const hidesHand = document.querySelector("#hide-opponent-hands").checked
     && player.controller !== CONTROLLER_IDS.human;
   hand.replaceChildren();
+  drawnTile.replaceChildren();
   player.hand.forEach((tile) => {
+    const destination = player.player === currentState.current_player
+      && currentState.draw_tile?.id === tile.id
+      ? drawnTile
+      : hand;
     if (hidesHand) {
-      hand.append(createTile("back", "伏せられた牌"));
+      destination.append(createTile("back", destination === drawnTile ? "伏せられた自摸牌" : "伏せられた牌"));
       return;
     }
     const actionIndex = discardActions.get(tile.id);
-    hand.append(createTile(tile, `${tile.tile}の牌`, {
+    destination.append(createTile(tile, destination === drawnTile ? `自摸牌 ${tile.tile}` : `${tile.tile}の牌`, {
       onSelect: actionIndex === undefined ? undefined : () => chooseAction(actionIndex),
     }));
   });
@@ -510,6 +517,23 @@ function settlementPaymentText(result, settlement) {
   return `${result.tsumo_non_dealer_payment} / ${result.tsumo_dealer_payment}点`;
 }
 
+function createSettlementIndicatorRow(label, tiles) {
+  const row = document.createElement("div");
+  const title = document.createElement("span");
+  const tileGroup = document.createElement("div");
+
+  row.className = "settlement-indicator-row";
+  title.textContent = label;
+  tileGroup.className = "tiles";
+  if (tiles.length) {
+    tiles.forEach((tile) => tileGroup.append(createTile(tile, `${label} ${tile.tile}`)));
+  } else {
+    tileGroup.textContent = "—";
+  }
+  row.append(title, tileGroup);
+  return row;
+}
+
 function renderSettlementWinner(result, settlement) {
   const card = document.createElement("article");
   const heading = document.createElement("div");
@@ -518,6 +542,7 @@ function renderSettlementWinner(result, settlement) {
   const detail = document.createElement("p");
   const payment = document.createElement("strong");
   const yaku = document.createElement("div");
+  const indicators = document.createElement("div");
 
   card.className = "settlement-winner";
   heading.className = "settlement-winner-heading";
@@ -528,6 +553,7 @@ function renderSettlementWinner(result, settlement) {
   payment.className = "settlement-payment";
   payment.textContent = settlementPaymentText(result, settlement);
   yaku.className = "settlement-yaku";
+  indicators.className = "settlement-indicators";
 
   result.yaku.forEach((name) => {
     const tag = document.createElement("span");
@@ -544,6 +570,10 @@ function renderSettlementWinner(result, settlement) {
     tag.textContent = `${label} ${count}`;
     yaku.append(tag);
   });
+  indicators.append(
+    createSettlementIndicatorRow("ドラ表示牌", result.dora_indicators ?? []),
+    createSettlementIndicatorRow("裏ドラ表示牌", result.ura_dora_indicators ?? []),
+  );
 
   identity.append(title, detail);
   heading.append(identity);
@@ -553,7 +583,7 @@ function renderSettlementWinner(result, settlement) {
       `和了牌 ${currentState.settlement.winning_tile.tile}`,
     ));
   }
-  card.append(heading, payment, yaku);
+  card.append(heading, payment, yaku, indicators);
   return card;
 }
 
@@ -668,7 +698,8 @@ function stepGame() {
 
 function playGame() {
   if (!currentState?.active || currentState.waiting_for_input || currentState.phase === "game_end") return;
-  playbackTimer = setInterval(stepGame, 70);
+  const speed = Number(document.querySelector("#playback-speed").value);
+  playbackTimer = setInterval(stepGame, PLAYBACK_INTERVAL_MS / speed);
   updateHistoryControls();
 }
 
@@ -683,7 +714,7 @@ function startGame() {
     seedInput.focus();
     throw new Error("山のシードは1〜4294967295の整数で指定してください。");
   }
-  const wallMode = document.querySelector("#wall-mode").value === "preset" ? 1 : 0;
+  const wallMode = Number(document.querySelector("#wall-mode").value);
   const started = wasmModule._cj4_web_game_start(seed, wallMode, ...controllers);
   if (!started) throw new Error("対局を開始できませんでした。設定値を確認してください。");
 
@@ -738,6 +769,11 @@ function wireGameControls() {
     updateHistoryControls();
   });
   document.querySelector("#play-game").addEventListener("click", playGame);
+  document.querySelector("#playback-speed").addEventListener("change", () => {
+    if (playbackTimer === undefined) return;
+    stopPlayback();
+    playGame();
+  });
   document.querySelector("#history-position").addEventListener("input", (event) => rewindGame(event.target.value));
   document.querySelector("#hide-opponent-hands").addEventListener("change", renderGameState);
   document.querySelector("#settlement-close").addEventListener("click", () => {
