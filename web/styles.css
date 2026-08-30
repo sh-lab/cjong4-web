@@ -783,7 +783,7 @@ main {
   text-align: right;
 }
 
-.playback-speed {
+.playback-wait {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -792,7 +792,7 @@ main {
   font-weight: 700;
 }
 
-.playback-speed select {
+.playback-wait select {
   min-height: 38px;
   padding-inline: 7px;
 }
@@ -1060,7 +1060,7 @@ pre {
     text-align: left;
   }
 
-  .playback-speed {
+  .playback-wait {
     grid-column: 2 / -1;
     justify-content: flex-end;
   }
