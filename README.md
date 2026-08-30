@@ -11,7 +11,7 @@ Emscriptenビルド、ブラウザ向けC API、編集可能な対局ルール�
 
 ## ステータス / Status
 
-v0.9リリース / v0.9 Release
+v0.9.1リリース / v0.9.1 Release
 
 ## 準備
 
