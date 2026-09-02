@@ -898,7 +898,7 @@ pre {
   .player-panel {
     display: grid;
     grid-template-columns: minmax(330px, 0.75fr) minmax(150px, 0.35fr) minmax(620px, 2fr);
-    grid-template-rows: repeat(2, 52px);
+    grid-template-rows: repeat(2, minmax(52px, auto));
   }
 
   .player-header {
