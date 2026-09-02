@@ -44,7 +44,12 @@ enum
     CJ4_WEB_WALL_RANDOM = 0,
     CJ4_WEB_WALL_ID_ORDER = 1,
     CJ4_WEB_WALL_YAKUMAN_NORTH = 2,
-    CJ4_WEB_WALL_MODE_COUNT = 3,
+    CJ4_WEB_WALL_ALL_KOKUSHI_13_WAIT = 3,
+    CJ4_WEB_WALL_DEALER_RYANPEIKOU = 4,
+    CJ4_WEB_WALL_DEALER_TENHOU_DAISUUSHII = 5,
+    CJ4_WEB_WALL_DEALER_JUNCHAN_DOUBLE_RIICHI = 6,
+    CJ4_WEB_WALL_DEALER_CHANTA_DOUBLE_RIICHI = 7,
+    CJ4_WEB_WALL_MODE_COUNT = 8,
     CJ4_WEB_PENDING_NONE = 0,
     CJ4_WEB_PENDING_SINGLE = 1,
     CJ4_WEB_PENDING_REACTION = 2
@@ -191,6 +196,39 @@ cj4_web_place_wall_tile(
 }
 
 static void
+cj4_web_place_initial_deal(
+    cj4_tile_id wall[CJ4_TILE_ID_COUNT],
+    const cj4_tile_id hands[CJ4_PLAYER_COUNT][13],
+    cj4_tile_id dealer_draw)
+{
+    uint8_t hand_positions[CJ4_PLAYER_COUNT] = {0};
+    uint8_t wall_position = 0;
+
+    for (uint8_t group = 0; group < 3; ++group)
+    {
+        for (cj4_player player = 0; player < CJ4_PLAYER_COUNT; ++player)
+        {
+            for (uint8_t tile = 0; tile < 4; ++tile)
+            {
+                cj4_web_place_wall_tile(
+                    wall,
+                    wall_position++,
+                    hands[player][hand_positions[player]++]);
+            }
+        }
+    }
+    for (cj4_player player = 0; player < CJ4_PLAYER_COUNT; ++player)
+    {
+        cj4_web_place_wall_tile(
+            wall,
+            wall_position++,
+            hands[player][hand_positions[player]++]);
+    }
+
+    cj4_web_place_wall_tile(wall, wall_position, dealer_draw);
+}
+
+static void
 cj4_web_fill_yakuman_north_wall(cj4_tile_id wall[CJ4_TILE_ID_COUNT])
 {
     const cj4_tile_id hands[CJ4_PLAYER_COUNT][13] = {
@@ -228,32 +266,189 @@ cj4_web_fill_yakuman_north_wall(cj4_tile_id wall[CJ4_TILE_ID_COUNT])
             cj4_tile_make(30, 3),
         },
     };
-    uint8_t hand_positions[CJ4_PLAYER_COUNT] = {0};
-    uint8_t wall_position = 0;
+    /* P1 draws the fourth north as the surplus tile. */
+    cj4_web_place_initial_deal(wall, hands, cj4_tile_make(30, 0));
+}
 
-    for (uint8_t group = 0; group < 3; ++group)
-    {
-        for (cj4_player player = 0; player < CJ4_PLAYER_COUNT; ++player)
+static void
+cj4_web_fill_all_kokushi_13_wait_wall(cj4_tile_id wall[CJ4_TILE_ID_COUNT])
+{
+    cj4_tile_id hands[CJ4_PLAYER_COUNT][13];
+    const cj4_tile_type types[13] = {
+        0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33};
+
+    for (cj4_player player = 0; player < CJ4_PLAYER_COUNT; ++player)
+        for (uint8_t tile = 0; tile < 13; ++tile)
+            hands[player][tile] = cj4_tile_make(types[tile], player);
+
+    /* P1 draws an unrelated tile, leaving all four players in thirteen-sided wait. */
+    cj4_web_place_initial_deal(wall, hands, cj4_tile_make(1, 0));
+}
+
+static void
+cj4_web_fill_dealer_ryanpeikou_wall(cj4_tile_id wall[CJ4_TILE_ID_COUNT])
+{
+    const cj4_tile_id hands[CJ4_PLAYER_COUNT][13] = {
         {
-            for (uint8_t tile = 0; tile < 4; ++tile)
-            {
-                cj4_web_place_wall_tile(
-                    wall,
-                    wall_position++,
-                    hands[player][hand_positions[player]++]);
-            }
+            /* P1: 112233m 112233p 5s, a chiitoi/ryanpeikou overlap. */
+            cj4_tile_make(0, 0), cj4_tile_make(0, 1),
+            cj4_tile_make(1, 0), cj4_tile_make(1, 1),
+            cj4_tile_make(2, 0), cj4_tile_make(2, 1),
+            cj4_tile_make(9, 0), cj4_tile_make(9, 1),
+            cj4_tile_make(10, 0), cj4_tile_make(10, 1),
+            cj4_tile_make(11, 0), cj4_tile_make(11, 1),
+            cj4_tile_make(22, 3),
+        },
+        {
+            cj4_tile_make(3, 0), cj4_tile_make(3, 1),
+            cj4_tile_make(3, 2), cj4_tile_make(3, 3),
+            cj4_tile_make(4, 0), cj4_tile_make(4, 1),
+            cj4_tile_make(4, 2), cj4_tile_make(4, 3),
+            cj4_tile_make(5, 0), cj4_tile_make(5, 1),
+            cj4_tile_make(5, 2), cj4_tile_make(5, 3),
+            cj4_tile_make(6, 0),
+        },
+        {
+            cj4_tile_make(6, 1), cj4_tile_make(6, 2), cj4_tile_make(6, 3),
+            cj4_tile_make(7, 0), cj4_tile_make(7, 1),
+            cj4_tile_make(7, 2), cj4_tile_make(7, 3),
+            cj4_tile_make(8, 0), cj4_tile_make(8, 1),
+            cj4_tile_make(8, 2), cj4_tile_make(8, 3),
+            cj4_tile_make(12, 0), cj4_tile_make(12, 1),
+        },
+        {
+            cj4_tile_make(12, 2), cj4_tile_make(12, 3),
+            cj4_tile_make(13, 0), cj4_tile_make(13, 1),
+            cj4_tile_make(13, 2), cj4_tile_make(13, 3),
+            cj4_tile_make(14, 0), cj4_tile_make(14, 1),
+            cj4_tile_make(14, 2), cj4_tile_make(14, 3),
+            cj4_tile_make(15, 0), cj4_tile_make(15, 1), cj4_tile_make(15, 2),
+        },
+    };
+
+    /* P1 draws east as a discard candidate while retaining the 5s wait. */
+    cj4_web_place_initial_deal(wall, hands, cj4_tile_make(27, 0));
+    /* P2 draws a 5s that can be discarded to demonstrate the overlap. */
+    cj4_web_place_wall_tile(wall, 53, cj4_tile_make(22, 0));
+}
+
+static void
+cj4_web_fill_dealer_tenhou_daisuushii_wall(
+    cj4_tile_id wall[CJ4_TILE_ID_COUNT])
+{
+    const cj4_tile_id hands[CJ4_PLAYER_COUNT][13] = {
+        {
+            /* P1: concealed wind triplets and a single white dragon. */
+            cj4_tile_make(27, 0), cj4_tile_make(27, 1), cj4_tile_make(27, 2),
+            cj4_tile_make(28, 0), cj4_tile_make(28, 1), cj4_tile_make(28, 2),
+            cj4_tile_make(29, 0), cj4_tile_make(29, 1), cj4_tile_make(29, 2),
+            cj4_tile_make(30, 0), cj4_tile_make(30, 1), cj4_tile_make(30, 2),
+            cj4_tile_make(31, 0),
+        },
+        {
+            cj4_tile_make(27, 3), cj4_tile_make(28, 3),
+            cj4_tile_make(29, 3), cj4_tile_make(30, 3),
+            cj4_tile_make(31, 2), cj4_tile_make(31, 3),
+            cj4_tile_make(32, 0), cj4_tile_make(32, 1),
+            cj4_tile_make(32, 2), cj4_tile_make(32, 3),
+            cj4_tile_make(33, 0), cj4_tile_make(33, 1), cj4_tile_make(33, 2),
+        },
+        {
+            cj4_tile_make(33, 3),
+            cj4_tile_make(0, 0), cj4_tile_make(0, 1),
+            cj4_tile_make(0, 2), cj4_tile_make(0, 3),
+            cj4_tile_make(1, 0), cj4_tile_make(1, 1),
+            cj4_tile_make(1, 2), cj4_tile_make(1, 3),
+            cj4_tile_make(2, 0), cj4_tile_make(2, 1),
+            cj4_tile_make(2, 2), cj4_tile_make(2, 3),
+        },
+        {
+            cj4_tile_make(3, 0), cj4_tile_make(3, 1),
+            cj4_tile_make(3, 2), cj4_tile_make(3, 3),
+            cj4_tile_make(4, 0), cj4_tile_make(4, 1),
+            cj4_tile_make(4, 2), cj4_tile_make(4, 3),
+            cj4_tile_make(5, 0), cj4_tile_make(5, 1),
+            cj4_tile_make(5, 2), cj4_tile_make(5, 3),
+            cj4_tile_make(6, 0),
+        },
+    };
+
+    /* The second white completes tenhou, all honors, big four winds and suuankou. */
+    cj4_web_place_initial_deal(wall, hands, cj4_tile_make(31, 1));
+}
+
+static void
+cj4_web_fill_dealer_double_riichi_wall(
+    cj4_tile_id wall[CJ4_TILE_ID_COUNT],
+    const cj4_tile_id dealer_hand[13],
+    cj4_tile_id dealer_draw,
+    cj4_tile_id next_draw)
+{
+    cj4_tile_id hands[CJ4_PLAYER_COUNT][13] = {{0}};
+    uint8_t used[CJ4_TILE_ID_COUNT] = {0};
+    uint16_t candidate = 0;
+
+    memcpy(hands[CJ4_PLAYER_0], dealer_hand, sizeof(hands[CJ4_PLAYER_0]));
+    for (uint8_t tile = 0; tile < 13; ++tile)
+        used[dealer_hand[tile]] = 1;
+    used[dealer_draw] = 1;
+    used[next_draw] = 1;
+
+    for (cj4_player player = CJ4_PLAYER_1; player < CJ4_PLAYER_COUNT; ++player)
+    {
+        for (uint8_t tile = 0; tile < 13; ++tile)
+        {
+            while (candidate < CJ4_TILE_ID_COUNT && used[candidate])
+                candidate++;
+            hands[player][tile] = (cj4_tile_id)candidate;
+            used[candidate++] = 1;
         }
     }
-    for (cj4_player player = 0; player < CJ4_PLAYER_COUNT; ++player)
-    {
-        cj4_web_place_wall_tile(
-            wall,
-            wall_position++,
-            hands[player][hand_positions[player]++]);
-    }
 
-    /* P1 draws the fourth north as the surplus tile. */
-    cj4_web_place_wall_tile(wall, wall_position, cj4_tile_make(30, 0));
+    cj4_web_place_initial_deal(wall, hands, dealer_draw);
+    cj4_web_place_wall_tile(wall, 53, next_draw);
+}
+
+static void
+cj4_web_fill_dealer_junchan_double_riichi_wall(
+    cj4_tile_id wall[CJ4_TILE_ID_COUNT])
+{
+    const cj4_tile_id dealer_hand[13] = {
+        /* P1: 123m 789m 123p 789p 1s, waiting on 1s. */
+        cj4_tile_make(0, 0), cj4_tile_make(1, 0), cj4_tile_make(2, 0),
+        cj4_tile_make(6, 0), cj4_tile_make(7, 0), cj4_tile_make(8, 0),
+        cj4_tile_make(9, 0), cj4_tile_make(10, 0), cj4_tile_make(11, 0),
+        cj4_tile_make(15, 0), cj4_tile_make(16, 0), cj4_tile_make(17, 0),
+        cj4_tile_make(18, 0),
+    };
+
+    /* P1 discards white for double riichi; P2 then draws the winning 1s. */
+    cj4_web_fill_dealer_double_riichi_wall(
+        wall,
+        dealer_hand,
+        cj4_tile_make(31, 0),
+        cj4_tile_make(18, 1));
+}
+
+static void
+cj4_web_fill_dealer_chanta_double_riichi_wall(
+    cj4_tile_id wall[CJ4_TILE_ID_COUNT])
+{
+    const cj4_tile_id dealer_hand[13] = {
+        /* P1: 123m 789m 123p 789p east, waiting on east. */
+        cj4_tile_make(0, 0), cj4_tile_make(1, 0), cj4_tile_make(2, 0),
+        cj4_tile_make(6, 0), cj4_tile_make(7, 0), cj4_tile_make(8, 0),
+        cj4_tile_make(9, 0), cj4_tile_make(10, 0), cj4_tile_make(11, 0),
+        cj4_tile_make(15, 0), cj4_tile_make(16, 0), cj4_tile_make(17, 0),
+        cj4_tile_make(27, 0),
+    };
+
+    /* P1 discards 5s for double riichi; P2 then draws the winning east. */
+    cj4_web_fill_dealer_double_riichi_wall(
+        wall,
+        dealer_hand,
+        cj4_tile_make(22, 3),
+        cj4_tile_make(27, 1));
 }
 
 static void
@@ -267,6 +462,31 @@ cj4_web_fill_wall(cj4_tile_id wall[CJ4_TILE_ID_COUNT])
     if (cj4_web_game.wall_mode == CJ4_WEB_WALL_YAKUMAN_NORTH)
     {
         cj4_web_fill_yakuman_north_wall(wall);
+        return;
+    }
+    if (cj4_web_game.wall_mode == CJ4_WEB_WALL_ALL_KOKUSHI_13_WAIT)
+    {
+        cj4_web_fill_all_kokushi_13_wait_wall(wall);
+        return;
+    }
+    if (cj4_web_game.wall_mode == CJ4_WEB_WALL_DEALER_RYANPEIKOU)
+    {
+        cj4_web_fill_dealer_ryanpeikou_wall(wall);
+        return;
+    }
+    if (cj4_web_game.wall_mode == CJ4_WEB_WALL_DEALER_TENHOU_DAISUUSHII)
+    {
+        cj4_web_fill_dealer_tenhou_daisuushii_wall(wall);
+        return;
+    }
+    if (cj4_web_game.wall_mode == CJ4_WEB_WALL_DEALER_JUNCHAN_DOUBLE_RIICHI)
+    {
+        cj4_web_fill_dealer_junchan_double_riichi_wall(wall);
+        return;
+    }
+    if (cj4_web_game.wall_mode == CJ4_WEB_WALL_DEALER_CHANTA_DOUBLE_RIICHI)
+    {
+        cj4_web_fill_dealer_chanta_double_riichi_wall(wall);
         return;
     }
 

@@ -99,6 +99,120 @@ action_index(
     return value;
 }
 
+static unsigned
+action_type_index(const char *json, const char *type)
+{
+    char marker[48];
+    const char *actions = strstr(json, "\"legal_actions\":[");
+    const char *match;
+    unsigned value = 0;
+
+    assert(actions != NULL);
+    (void)snprintf(marker, sizeof(marker), "\"type\":\"%s\"", type);
+    match = strstr(actions, marker);
+    assert(match != NULL);
+
+    while (match > actions && *match != '{')
+        match--;
+    assert(sscanf(match, "{\"index\":%u", &value) == 1);
+    return value;
+}
+
+static void
+assert_dealer_terminal_double_riichi_preset(
+    uint32_t wall_mode,
+    unsigned dealer_draw,
+    const char *dealer_draw_tile,
+    unsigned winning_tile,
+    const char *winning_tile_name,
+    const char *expected_yaku,
+    const char *excluded_yaku)
+{
+    const char *json;
+    uint32_t result;
+    const char *sequence_tiles[] = {
+        "1m", "2m", "3m", "7m", "8m", "9m",
+        "1p", "2p", "3p", "7p", "8p", "9p"};
+
+    cj4_web_rules_reset();
+    assert(cj4_web_game_start(
+               1,
+               wall_mode,
+               CJ4_WEB_CONTROLLER_HUMAN,
+               CJ4_WEB_CONTROLLER_HUMAN,
+               CJ4_WEB_CONTROLLER_HUMAN,
+               CJ4_WEB_CONTROLLER_HUMAN) == 1);
+    json = cj4_web_state_json();
+    {
+        char marker[64];
+        (void)snprintf(marker, sizeof(marker), "\"wall_mode\":%u", wall_mode);
+        assert(strstr(json, marker) != NULL);
+        (void)snprintf(
+            marker,
+            sizeof(marker),
+            "\"draw_tile\":{\"id\":%u,\"tile\":\"%s\"}",
+            dealer_draw,
+            dealer_draw_tile);
+        assert(strstr(json, marker) != NULL);
+    }
+    for (unsigned tile = 0;
+         tile < sizeof(sequence_tiles) / sizeof(sequence_tiles[0]);
+         ++tile)
+        assert(hand_tile_count(json, 0, sequence_tiles[tile]) == 1);
+    assert(hand_tile_count(json, 0, winning_tile_name) == 1);
+
+    assert(cj4_web_game_step() == 2);
+    json = cj4_web_state_json();
+    assert(cj4_web_game_choose(
+               state_generation(json),
+               action_index(json, "riichi", 0, dealer_draw)) == 1);
+    assert(cj4_web_game_step() == 1);
+    json = cj4_web_state_json();
+    assert(strstr(json, "\"riichi_sticks\":1") != NULL);
+    assert(strstr(json, "\"player\":0,\"seat_wind\":0,\"score\":24000") != NULL);
+
+    assert(cj4_web_game_step() == 2);
+    json = cj4_web_state_json();
+    {
+        char marker[64];
+        (void)snprintf(
+            marker,
+            sizeof(marker),
+            "\"draw_tile\":{\"id\":%u,\"tile\":\"%s\"}",
+            winning_tile,
+            winning_tile_name);
+        assert(strstr(json, marker) != NULL);
+    }
+    assert(cj4_web_game_choose(
+               state_generation(json),
+               action_index(json, "discard", 1, winning_tile)) == 1);
+    assert(cj4_web_game_step() == 2);
+    json = cj4_web_state_json();
+    result = cj4_web_game_choose(
+        state_generation(json),
+        action_type_index(json, "ron"));
+    while (result == 2)
+    {
+        json = cj4_web_state_json();
+        result = cj4_web_game_choose(
+            state_generation(json),
+            action_type_index(json, "pass"));
+    }
+    assert(result == 1);
+    json = cj4_web_state_json();
+    assert(strstr(json, "\"phase\":\"round_end\"") != NULL);
+    assert(strstr(json, "\"type\":\"ron\"") != NULL);
+    assert(strstr(json, "\"double_riichi\"") != NULL);
+    assert(strstr(json, "\"ippatsu\"") != NULL);
+    {
+        char marker[48];
+        (void)snprintf(marker, sizeof(marker), "\"%s\"", expected_yaku);
+        assert(strstr(json, marker) != NULL);
+        (void)snprintf(marker, sizeof(marker), "\"%s\"", excluded_yaku);
+        assert(strstr(json, marker) == NULL);
+    }
+}
+
 int
 main(void)
 {
@@ -309,6 +423,116 @@ main(void)
     json = cj4_web_state_json();
     assert(strstr(json, "\"phase\":\"round_end\"") != NULL);
     assert(strstr(json, "\"abortive_reason\":\"triple_ron\"") != NULL);
+
+    cj4_web_rules_reset();
+    assert(cj4_web_game_start(
+               1,
+               3,
+               CJ4_WEB_CONTROLLER_HUMAN,
+               CJ4_WEB_CONTROLLER_HUMAN,
+               CJ4_WEB_CONTROLLER_HUMAN,
+               CJ4_WEB_CONTROLLER_HUMAN) == 1);
+    json = cj4_web_state_json();
+    assert(strstr(json, "\"wall_mode\":3") != NULL);
+    assert(strstr(json, "\"draw_tile\":{\"id\":4,\"tile\":\"2m\"}") != NULL);
+    for (unsigned player = 0; player < 4; ++player)
+    {
+        const char *kokushi_tiles[] = {
+            "1m", "9m", "1p", "9p", "1s", "9s",
+            "1z", "2z", "3z", "4z", "5z", "6z", "7z"};
+
+        for (unsigned tile = 0; tile < 13; ++tile)
+            assert(hand_tile_count(json, player, kokushi_tiles[tile]) == 1);
+    }
+
+    cj4_web_rules_reset();
+    assert(cj4_web_game_start(
+               1,
+               4,
+               CJ4_WEB_CONTROLLER_HUMAN,
+               CJ4_WEB_CONTROLLER_HUMAN,
+               CJ4_WEB_CONTROLLER_HUMAN,
+               CJ4_WEB_CONTROLLER_HUMAN) == 1);
+    json = cj4_web_state_json();
+    assert(strstr(json, "\"wall_mode\":4") != NULL);
+    assert(strstr(json, "\"draw_tile\":{\"id\":108,\"tile\":\"1z\"}") != NULL);
+    assert(hand_tile_count(json, 0, "1m") == 2);
+    assert(hand_tile_count(json, 0, "2m") == 2);
+    assert(hand_tile_count(json, 0, "3m") == 2);
+    assert(hand_tile_count(json, 0, "1p") == 2);
+    assert(hand_tile_count(json, 0, "2p") == 2);
+    assert(hand_tile_count(json, 0, "3p") == 2);
+    assert(hand_tile_count(json, 0, "5s") == 1);
+    assert(hand_tile_count(json, 0, "1z") == 1);
+    assert(cj4_web_game_step() == 2);
+    json = cj4_web_state_json();
+    assert(cj4_web_game_choose(
+               state_generation(json),
+               action_index(json, "discard", 0, 108)) == 1);
+    assert(cj4_web_game_step() == 1);
+    assert(cj4_web_game_step() == 2);
+    json = cj4_web_state_json();
+    assert(strstr(json, "\"pending_player\":1") != NULL);
+    assert(strstr(json, "\"draw_tile\":{\"id\":88,\"tile\":\"0s\"}") != NULL);
+    assert(cj4_web_game_choose(
+               state_generation(json),
+               action_index(json, "discard", 1, 88)) == 1);
+    assert(cj4_web_game_step() == 2);
+    json = cj4_web_state_json();
+    assert(strstr(json, "\"pending_player\":0") != NULL);
+    {
+        uint32_t result = cj4_web_game_choose(
+            state_generation(json),
+            action_type_index(json, "ron"));
+
+        while (result == 2)
+        {
+            json = cj4_web_state_json();
+            result = cj4_web_game_choose(
+                state_generation(json),
+                action_type_index(json, "pass"));
+        }
+        assert(result == 1);
+    }
+    json = cj4_web_state_json();
+    assert(strstr(json, "\"phase\":\"round_end\"") != NULL);
+    assert(strstr(json, "\"ryanpeikou\"") != NULL);
+    assert(strstr(json, "\"chiitoi\"") == NULL);
+
+    cj4_web_rules_reset();
+    assert(cj4_web_game_start(
+               1,
+               5,
+               CJ4_WEB_CONTROLLER_HUMAN,
+               CJ4_WEB_CONTROLLER_HUMAN,
+               CJ4_WEB_CONTROLLER_HUMAN,
+               CJ4_WEB_CONTROLLER_HUMAN) == 1);
+    json = cj4_web_state_json();
+    assert(strstr(json, "\"wall_mode\":5") != NULL);
+    assert(strstr(json, "\"draw_tile\":{\"id\":125,\"tile\":\"5z\"}") != NULL);
+    for (unsigned wind = 1; wind <= 4; ++wind)
+    {
+        char tile[3] = {(char)('0' + wind), 'z', '\0'};
+        assert(hand_tile_count(json, 0, tile) == 3);
+    }
+    assert(hand_tile_count(json, 0, "5z") == 2);
+    assert(cj4_web_game_step() == 2);
+    json = cj4_web_state_json();
+    assert(cj4_web_game_choose(
+               state_generation(json),
+               action_type_index(json, "tsumo")) == 1);
+    json = cj4_web_state_json();
+    assert(strstr(json, "\"phase\":\"round_end\"") != NULL);
+    assert(strstr(json, "\"type\":\"tsumo\"") != NULL);
+    assert(strstr(json, "\"tenhou\"") != NULL);
+    assert(strstr(json, "\"tsuuiisou\"") != NULL);
+    assert(strstr(json, "\"daisuushii\"") != NULL);
+    assert(strstr(json, "\"suuankou_tanki\"") != NULL);
+
+    assert_dealer_terminal_double_riichi_preset(
+        6, 124, "5z", 73, "1s", "junchan", "chanta");
+    assert_dealer_terminal_double_riichi_preset(
+        7, 91, "5s", 109, "1z", "chanta", "junchan");
 
     puts("cjong4-web API tests passed");
     return 0;
