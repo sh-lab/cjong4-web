@@ -67,7 +67,8 @@ cj4_web_bootstrap_json(void)
         "{\"schema_version\":1,\"engine\":{\"ready\":%s,\"api_version\":%u},"
         "\"rules\":{\"preset\":\"tenhou\",\"version\":%u,\"initial_score\":%d,"
         "\"target_score\":%d,\"game_type\":%d,\"tobi_end\":%s,\"kuitan\":%s,"
-        "\"kuikae_forbidden\":%s,\"kan_dora_timing\":%d,\"ippatsu\":%s,"
+        "\"kuikae_forbidden\":%s,\"kan_dora_timing\":%d,"
+        "\"four_kans_abort_timing\":%d,\"ippatsu\":%s,"
         "\"max_ron_players\":%u,\"kokushi_ron_on_ankan\":%s,"
         "\"triple_ron_abortive_draw\":%s,\"noten_penalty\":%s,"
         "\"noten_penalty_points\":%d,\"abortive_kyuushu_kyuuhai\":%s,"
@@ -85,6 +86,7 @@ cj4_web_bootstrap_json(void)
         (int)rules.initial_score, (int)rules.target_score, (int)rules.game_type,
         rules.tobi_end ? "true" : "false", rules.kuitan ? "true" : "false",
         rules.kuikae_forbidden ? "true" : "false", (int)rules.kan_dora_timing,
+        (int)rules.four_kans_abort_timing,
         rules.ippatsu ? "true" : "false", (unsigned)rules.max_ron_players,
         rules.kokushi_ron_on_ankan ? "true" : "false",
         rules.triple_ron_abortive_draw ? "true" : "false",

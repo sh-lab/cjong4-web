@@ -10,7 +10,7 @@ extern "C"
 
     enum
     {
-        CJ4_WEB_API_VERSION = 4
+        CJ4_WEB_API_VERSION = 5
     };
 
     typedef enum

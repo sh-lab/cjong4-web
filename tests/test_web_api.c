@@ -227,6 +227,7 @@ main(void)
     assert(strstr(json, "\"ready\":true") != NULL);
     assert(strstr(json, "\"preset\":\"tenhou\"") != NULL);
     assert(strstr(json, "\"kan_dora_timing\":1") != NULL);
+    assert(strstr(json, "\"four_kans_abort_timing\":1") != NULL);
     assert(strstr(json, "\"triple_ron_abortive_draw\":true") != NULL);
     assert(strstr(json, "\"kiriage_mangan\":false") != NULL);
     assert(strstr(json, "\"target_score_excludes_riichi_sticks\":true") != NULL);
@@ -238,6 +239,8 @@ main(void)
 
     cj4_web_rules_reset();
     assert(cj4_web_rule_set(0, 0) == 1);
+    assert(cj4_web_rule_set(8, 1) == 1);
+    assert(cj4_web_rule_set(35, 0) == 0);
     assert(cj4_web_game_start(
                12345,
                0,
@@ -250,6 +253,7 @@ main(void)
     assert(strstr(json, "\"schema_version\":5") != NULL);
     assert(strstr(json, "\"active\":true") != NULL);
     assert(strstr(json, "\"seed\":12345") != NULL);
+    assert(strstr(json, "\"remaining\":69") != NULL);
     assert(strstr(json, "\"history\":{\"index\":0,\"count\":1}") != NULL);
     assert(strstr(json, "\"players\":[") != NULL);
     assert(strstr(json, "\"draw_tile\":{") != NULL);

@@ -18,6 +18,7 @@ const RULE_GROUPS = [
       { key: "kuitan", label: "喰い断あり", type: "checkbox" },
       { key: "kuikae_forbidden", label: "喰い替え禁止", type: "checkbox" },
       { key: "kan_dora_timing", label: "槓ドラの公開時期", type: "select", options: [[0, "即時"], [1, "打牌後"]] },
+      { key: "four_kans_abort_timing", label: "四槓流れの時期", type: "select", options: [[0, "槓成立時"], [1, "嶺上牌の打牌後"]] },
       { key: "ippatsu", label: "一発あり", type: "checkbox" },
       { key: "aka_5m", label: "赤五萬", type: "number", min: 0, max: 4, step: 1, suffix: "枚" },
       { key: "aka_5p", label: "赤五筒", type: "number", min: 0, max: 4, step: 1, suffix: "枚" },
@@ -76,6 +77,7 @@ const RULE_DEFAULTS = Object.freeze({
   kuitan: true,
   kuikae_forbidden: true,
   kan_dora_timing: 1,
+  four_kans_abort_timing: 1,
   ippatsu: true,
   aka_5m: 1,
   aka_5p: 1,
@@ -865,8 +867,8 @@ async function main() {
     const raw = wasmModule.UTF8ToString(pointer);
     const bootstrap = JSON.parse(raw);
     const apiVersion = wasmModule._cj4_web_api_version();
-    if (apiVersion !== 4) {
-      throw new Error(`Wasm APIの版が一致しません（期待値: 4、実際: ${apiVersion}）。`);
+    if (apiVersion !== 5) {
+      throw new Error(`Wasm APIの版が一致しません（期待値: 5、実際: ${apiVersion}）。`);
     }
 
     renderPlayers(bootstrap.opponents);

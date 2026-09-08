@@ -578,11 +578,11 @@ cj4_web_apply_action(const cj4_action *action)
     switch (action->type)
     {
     case CJ4_ACTION_DISCARD:
-        return cj4_do_discard_with_rules(*state, &cj4_web_game.rules, action->tile);
+        return cj4_do_discard(*state, &cj4_web_game.rules, action->tile);
     case CJ4_ACTION_CHI:
-        return cj4_do_chi(*state, action->tiles[0], action->tiles[1]);
+        return cj4_do_chi(*state, &cj4_web_game.rules, action->tiles[0], action->tiles[1]);
     case CJ4_ACTION_PON:
-        return cj4_do_pon(*state, action->player, action->tiles[0], action->tiles[1]);
+        return cj4_do_pon(*state, &cj4_web_game.rules, action->player, action->tiles[0], action->tiles[1]);
     case CJ4_ACTION_ANKAN:
         return cj4_do_ankan(
             *state, action->tiles[0], action->tiles[1], action->tiles[2], action->tiles[3]);
@@ -1413,32 +1413,36 @@ cj4_web_rule_set(uint32_t field_index, int32_t value)
     case 5: cj4_web_configured_rules.kuitan = (uint8_t)value; break;
     case 6: cj4_web_configured_rules.kuikae_forbidden = (uint8_t)value; break;
     case 7: cj4_web_configured_rules.kan_dora_timing = (cj4_kan_dora_timing)value; break;
-    case 8: cj4_web_configured_rules.ippatsu = (uint8_t)value; break;
-    case 9: cj4_web_set_red_count(4, value); break;
-    case 10: cj4_web_set_red_count(13, value); break;
-    case 11: cj4_web_set_red_count(22, value); break;
-    case 12: cj4_web_configured_rules.max_ron_players = (uint8_t)value; break;
-    case 13: cj4_web_configured_rules.kokushi_ron_on_ankan = (uint8_t)value; break;
-    case 14: cj4_web_configured_rules.triple_ron_abortive_draw = (uint8_t)value; break;
-    case 15: cj4_web_configured_rules.noten_penalty = (uint8_t)value; break;
-    case 16: cj4_web_configured_rules.noten_penalty_points = value; break;
-    case 17: cj4_web_configured_rules.abortive_kyuushu_kyuuhai = (uint8_t)value; break;
-    case 18: cj4_web_configured_rules.abortive_suufon_renda = (uint8_t)value; break;
-    case 19: cj4_web_configured_rules.abortive_four_riichi = (uint8_t)value; break;
-    case 20: cj4_web_configured_rules.nagashi_mangan = (uint8_t)value; break;
-    case 21: cj4_web_configured_rules.nagashi_dealer_tenpai_renchan = (uint8_t)value; break;
-    case 22: cj4_web_configured_rules.kokushi_13_wait_double = (uint8_t)value; break;
-    case 23: cj4_web_configured_rules.suuankou_tanki_double = (uint8_t)value; break;
-    case 24: cj4_web_configured_rules.junsei_chuuren_double = (uint8_t)value; break;
-    case 25: cj4_web_configured_rules.daisuushii_double = (uint8_t)value; break;
-    case 26: cj4_web_configured_rules.kazoe_yakuman = (uint8_t)value; break;
-    case 27: cj4_web_configured_rules.kiriage_mangan = (uint8_t)value; break;
-    case 28: cj4_web_configured_rules.pao = (uint8_t)value; break;
-    case 29: cj4_web_configured_rules.pao_liability_only = (uint8_t)value; break;
-    case 30: cj4_web_configured_rules.pao_daisangen = (uint8_t)value; break;
-    case 31: cj4_web_configured_rules.pao_daisuushii = (uint8_t)value; break;
-    case 32: cj4_web_configured_rules.pao_suukantsu = (uint8_t)value; break;
-    case 33: cj4_web_configured_rules.multi_ron_honba_first_only = (uint8_t)value; break;
+    case 8:
+        cj4_web_configured_rules.four_kans_abort_timing =
+            (cj4_four_kans_abort_timing)value;
+        break;
+    case 9: cj4_web_configured_rules.ippatsu = (uint8_t)value; break;
+    case 10: cj4_web_set_red_count(4, value); break;
+    case 11: cj4_web_set_red_count(13, value); break;
+    case 12: cj4_web_set_red_count(22, value); break;
+    case 13: cj4_web_configured_rules.max_ron_players = (uint8_t)value; break;
+    case 14: cj4_web_configured_rules.kokushi_ron_on_ankan = (uint8_t)value; break;
+    case 15: cj4_web_configured_rules.triple_ron_abortive_draw = (uint8_t)value; break;
+    case 16: cj4_web_configured_rules.noten_penalty = (uint8_t)value; break;
+    case 17: cj4_web_configured_rules.noten_penalty_points = value; break;
+    case 18: cj4_web_configured_rules.abortive_kyuushu_kyuuhai = (uint8_t)value; break;
+    case 19: cj4_web_configured_rules.abortive_suufon_renda = (uint8_t)value; break;
+    case 20: cj4_web_configured_rules.abortive_four_riichi = (uint8_t)value; break;
+    case 21: cj4_web_configured_rules.nagashi_mangan = (uint8_t)value; break;
+    case 22: cj4_web_configured_rules.nagashi_dealer_tenpai_renchan = (uint8_t)value; break;
+    case 23: cj4_web_configured_rules.kokushi_13_wait_double = (uint8_t)value; break;
+    case 24: cj4_web_configured_rules.suuankou_tanki_double = (uint8_t)value; break;
+    case 25: cj4_web_configured_rules.junsei_chuuren_double = (uint8_t)value; break;
+    case 26: cj4_web_configured_rules.daisuushii_double = (uint8_t)value; break;
+    case 27: cj4_web_configured_rules.kazoe_yakuman = (uint8_t)value; break;
+    case 28: cj4_web_configured_rules.kiriage_mangan = (uint8_t)value; break;
+    case 29: cj4_web_configured_rules.pao = (uint8_t)value; break;
+    case 30: cj4_web_configured_rules.pao_liability_only = (uint8_t)value; break;
+    case 31: cj4_web_configured_rules.pao_daisangen = (uint8_t)value; break;
+    case 32: cj4_web_configured_rules.pao_daisuushii = (uint8_t)value; break;
+    case 33: cj4_web_configured_rules.pao_suukantsu = (uint8_t)value; break;
+    case 34: cj4_web_configured_rules.multi_ron_honba_first_only = (uint8_t)value; break;
     default: return 0;
     }
     return 1;
@@ -1650,11 +1654,7 @@ cj4_web_state_json(void)
     }
 
     cj4_phase phase = cj4_state_phase(&cj4_web_game.state);
-    uint8_t remaining = 0;
-    uint8_t used = (uint8_t)(cj4_web_game.state.wall_pos +
-                             cj4_web_game.state.dead_wall_draw_count);
-    if (used < CJ4_TILE_ID_COUNT - 14)
-        remaining = (uint8_t)(CJ4_TILE_ID_COUNT - 14 - used);
+    const uint8_t remaining = cj4_live_wall_remaining(&cj4_web_game.state);
 
     cj4_web_json_append(
         &writer,

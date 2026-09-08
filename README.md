@@ -1,6 +1,6 @@
 # cjong4-web
 
-`cjong4`、`cjong4-opponent`、`cjong4-mjai`をWebAssembly化し、ブラウザで4人打ち麻雀と
+`cjong4` v4.0.0、`cjong4-opponent`、`cjong4-mjai`をWebAssembly化し、ブラウザで4人打ち麻雀と
 視覚的デバッグを行うためのプロジェクトです。
 
 Emscriptenビルド、ブラウザ向けC API、編集可能な対局ルール、4席の人間／opponent
@@ -13,7 +13,22 @@ Emscriptenビルド、ブラウザ向けC API、編集可能な対局ルール�
 
 ## ステータス / Status
 
-v0.9.5リリース / v0.9.5 Release
+v0.9.6リリース / v0.9.6 Release
+
+### v0.9.6の変更内容
+
+- `cjong4` v4.0.0、`cjong4-opponent` v1.0.3、およびv4.0.0対応済みの`cjong4-mjai`へ依存を更新
+- チー・ポン・打牌に対局ルールを渡すv4 APIへ移行し、喰い替え禁止で打牌できなくなる鳴きを合法手から除外
+- 四槓流れのタイミングを「槓成立時」「嶺上牌の打牌後」から選択可能に変更（初期値は打牌後）
+- 残り牌数の表示に、槓を反映したコアの通常ツモ残数APIを使用
+- ブラウザ向けC APIをversion 5へ更新し、JavaScript側のバージョン確認も統一
+- Releaseビルドでもテストのassertを有効化
+
+API version 5では、ルール設定のフィールド番号8に`four_kans_abort_timing`を追加し、
+従来の番号8以降を1つずつ後ろへ移動しています。JavaScriptとWasmは同じ版を使用してください。
+状態JSONのschema versionは5のままです。
+
+ネイティブReleaseビルドと全テスト、WebAssemblyビルド、ブラウザでの起動・設定表示・対局進行を確認しています。
 
 ### v0.9.5の変更内容
 
@@ -92,9 +107,9 @@ python3 -m http.server 8000 --directory build-wasm/site
 和了できる山、親が第一打でダブルリーチできる純全帯么九または混全帯么九テンパイの山を
 選べます。
 
-ブラウザ向けAPI version 4では、設定、対局開始、操作切り替え、1状態遷移、人間の合法手選択、
+ブラウザ向けAPI version 5では、四槓流れのタイミングを含む設定、対局開始、操作切り替え、1状態遷移、人間の合法手選択、
 履歴復元、UI snapshot JSON、MJAI JSON Linesを公開しています。状態JSON schema version 5には
-局終了時の和了結果、清算後点数、MJAIイベント数を含み、自摸牌を手牌と区別して公開します。
+局終了時の和了結果、清算後点数、MJAIイベント数、槓を反映した通常ツモ残数を含み、自摸牌を手牌と区別して公開します。
 返却文字列はライブラリ所有です。
 
 ## ネイティブテスト
