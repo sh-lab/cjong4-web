@@ -8,6 +8,7 @@
 #include <cjong4/opponent/opponent_kokushi.h>
 #include <cjong4/opponent/opponent_pinfu.h>
 #include <cjong4/opponent/opponent_somete.h>
+#include <cjong4/opponent/opponent_standard.h>
 #include <cjong4/opponent/opponent_tanyao.h>
 #include <cjong4/opponent/opponent_toitoi.h>
 
@@ -26,7 +27,7 @@ cj4_web_opponents_ready(void)
     const cj4m_player_delegate opponents[] = {
         cj4_opponent_betaori(1), cj4_opponent_chanta(1), cj4_opponent_chiitoi(1),
         cj4_opponent_kokushi(1), cj4_opponent_pinfu(1), cj4_opponent_somete(1),
-        cj4_opponent_tanyao(1), cj4_opponent_toitoi(1)};
+        cj4_opponent_tanyao(1), cj4_opponent_toitoi(1), cj4_opponent_standard(1)};
 
     for (size_t i = 0; i < sizeof(opponents) / sizeof(opponents[0]); ++i)
     {
@@ -81,7 +82,7 @@ cj4_web_bootstrap_json(void)
         "\"multi_ron_honba_first_only\":%s,\"nagashi_dealer_tenpai_renchan\":%s,"
         "\"target_score_excludes_riichi_sticks\":%s,\"aka_5m\":%u,\"aka_5p\":%u,"
         "\"aka_5s\":%u},\"opponents\":[\"betaori\",\"chanta\",\"chiitoi\","
-        "\"kokushi\",\"pinfu\",\"somete\",\"tanyao\",\"toitoi\"]}",
+        "\"kokushi\",\"pinfu\",\"somete\",\"tanyao\",\"toitoi\",\"standard\"]}",
         ready ? "true" : "false", (unsigned)CJ4_WEB_API_VERSION, (unsigned)rules.version,
         (int)rules.initial_score, (int)rules.target_score, (int)rules.game_type,
         rules.tobi_end ? "true" : "false", rules.kuitan ? "true" : "false",

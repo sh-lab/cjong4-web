@@ -21,6 +21,7 @@
 #include <cjong4/opponent/opponent_kokushi.h>
 #include <cjong4/opponent/opponent_pinfu.h>
 #include <cjong4/opponent/opponent_somete.h>
+#include <cjong4/opponent/opponent_standard.h>
 #include <cjong4/opponent/opponent_tanyao.h>
 #include <cjong4/opponent/opponent_toitoi.h>
 
@@ -518,6 +519,8 @@ cj4_web_make_delegate(uint8_t controller)
         return cj4_opponent_tanyao(1);
     case CJ4_WEB_CONTROLLER_TOITOI:
         return cj4_opponent_toitoi(1);
+    case CJ4_WEB_CONTROLLER_STANDARD:
+        return cj4_opponent_standard(1);
     case CJ4_WEB_CONTROLLER_HUMAN:
     case CJ4_WEB_CONTROLLER_BETAORI:
     default:

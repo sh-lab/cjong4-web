@@ -115,6 +115,7 @@ const CONTROLLER_IDS = Object.freeze({
   somete: 6,
   tanyao: 7,
   toitoi: 8,
+  standard: 9,
 });
 const CONTROLLER_NAMES = Object.freeze(Object.keys(CONTROLLER_IDS));
 const ACTION_LABELS = Object.freeze({
@@ -496,7 +497,14 @@ function renderPlayer(player) {
       separator.className = "meld-break";
       melds.append(separator);
     }
-    meld.tiles.forEach((tile) => melds.append(createTile(tile, `${meld.type}の${tile.tile}`)));
+    meld.tiles.forEach((tile, tileIndex) => {
+      const faceDown = meld.type === "ankan"
+        && (tileIndex === 0 || tileIndex === meld.tiles.length - 1);
+      melds.append(createTile(
+        faceDown ? "back" : tile,
+        faceDown ? "暗槓の伏せ牌" : `${meld.type}の${tile.tile}`,
+      ));
+    });
   });
 
   const discards = panel.querySelector(".discards");
@@ -867,8 +875,8 @@ async function main() {
     const raw = wasmModule.UTF8ToString(pointer);
     const bootstrap = JSON.parse(raw);
     const apiVersion = wasmModule._cj4_web_api_version();
-    if (apiVersion !== 5) {
-      throw new Error(`Wasm APIの版が一致しません（期待値: 5、実際: ${apiVersion}）。`);
+    if (apiVersion !== 6) {
+      throw new Error(`Wasm APIの版が一致しません（期待値: 6、実際: ${apiVersion}）。`);
     }
 
     renderPlayers(bootstrap.opponents);

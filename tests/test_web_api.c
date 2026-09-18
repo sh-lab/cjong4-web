@@ -236,6 +236,7 @@ main(void)
     assert(strstr(json, "\"aka_5s\":1") != NULL);
     assert(strstr(json, "\"betaori\"") != NULL);
     assert(strstr(json, "\"toitoi\"") != NULL);
+    assert(strstr(json, "\"standard\"") != NULL);
 
     cj4_web_rules_reset();
     assert(cj4_web_rule_set(0, 0) == 1);
@@ -537,6 +538,35 @@ main(void)
         6, 124, "5z", 73, "1s", "junchan", "chanta");
     assert_dealer_terminal_double_riichi_preset(
         7, 91, "5s", 109, "1z", "chanta", "junchan");
+
+    /* The appended controller preserves all existing numeric IDs. */
+    assert(CJ4_WEB_CONTROLLER_TOITOI == 8);
+    assert(CJ4_WEB_CONTROLLER_STANDARD == 9);
+    cj4_web_rules_reset();
+    assert(cj4_web_game_start(
+               12345, 0,
+               CJ4_WEB_CONTROLLER_STANDARD, CJ4_WEB_CONTROLLER_STANDARD,
+               CJ4_WEB_CONTROLLER_STANDARD, CJ4_WEB_CONTROLLER_STANDARD) == 1);
+    assert(strstr(cj4_web_state_json(), "\"controller\":9") != NULL);
+    steps = 0;
+    do
+    {
+        assert(++steps < 1000);
+        assert(cj4_web_game_step() == 1);
+        json = cj4_web_state_json();
+        assert(strstr(json, "\"waiting_for_input\":false") != NULL);
+    } while (strstr(json, "\"phase\":\"round_end\"") == NULL);
+
+    /* Switching a pending human seat to standard resumes automatic play. */
+    assert(cj4_web_game_start(
+               67890, 0,
+               CJ4_WEB_CONTROLLER_HUMAN, CJ4_WEB_CONTROLLER_STANDARD,
+               CJ4_WEB_CONTROLLER_STANDARD, CJ4_WEB_CONTROLLER_STANDARD) == 1);
+    assert(cj4_web_game_step() == 2);
+    assert(cj4_web_game_set_controller(0, CJ4_WEB_CONTROLLER_STANDARD) == 1);
+    assert(strstr(cj4_web_state_json(), "\"waiting_for_input\":false") != NULL);
+    assert(cj4_web_game_step() == 1);
+    assert(cj4_web_game_set_controller(0, CJ4_WEB_CONTROLLER_COUNT) == 0);
 
     puts("cjong4-web API tests passed");
     return 0;

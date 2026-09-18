@@ -1,6 +1,6 @@
 # cjong4-web
 
-`cjong4` v4.0.0、`cjong4-opponent`、`cjong4-mjai`をWebAssembly化し、ブラウザで4人打ち麻雀と
+`cjong4` v4.0.0、`cjong4-opponent` v1.0.4、`cjong4-mjai`をWebAssembly化し、ブラウザで4人打ち麻雀と
 視覚的デバッグを行うためのプロジェクトです。
 
 Emscriptenビルド、ブラウザ向けC API、編集可能な対局ルール、4席の人間／opponent
@@ -8,12 +8,27 @@ Emscriptenビルド、ブラウザ向けC API、編集可能な対局ルール�
 次の停止地点までの進行、履歴の復元に対応しています。
 対局状態はWasm側で保持し、ブラウザへバージョン付きJSONスナップショットを渡します。
 各席の操作は対局中でも人間／opponentを切り替えられます。
+`standard`を含む9種類のopponentを選択できます。暗槓は外側2枚を背面、中央2枚を表向きに表示します。
 山のシード・デバッグ用プリセット指定と、MJAIイベント履歴の表示・コピー・JSON Lines保存に
 対応しています。
 
+ブラウザ向けC APIはversion 6です。`standard`をcontroller ID 9として追加し、
+既存のcontroller IDと状態JSONのschema version 5は維持しています。JavaScriptとWasmは同じ版を使用してください。
+
 ## ステータス / Status
 
-v0.9.6リリース / v0.9.6 Release
+v0.9.7リリース / v0.9.7 Release
+
+### v0.9.7の変更内容
+
+- `cjong4-opponent`をv1.0.4とリリース表記訂正を含む最新コミットへ更新
+- 各席のopponentに`standard`を追加し、対局中の切り替えにも対応
+- 暗槓を「背面・表・表・背面」の順で表示
+- ブラウザ向けC APIをversion 6へ更新し、既存のcontroller IDと状態JSONのschema version 5を維持
+- `standard`での自動対局と人間操作からの切り替えをテストに追加
+
+警告をエラーとして扱うネイティブReleaseビルドと全テスト、WebAssemblyビルド、
+ブラウザでの`standard`選択・対局進行・暗槓表示を確認しています。
 
 ### v0.9.6の変更内容
 

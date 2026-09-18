@@ -10,7 +10,7 @@ extern "C"
 
     enum
     {
-        CJ4_WEB_API_VERSION = 5
+        CJ4_WEB_API_VERSION = 6
     };
 
     typedef enum
@@ -24,6 +24,7 @@ extern "C"
         CJ4_WEB_CONTROLLER_SOMETE,
         CJ4_WEB_CONTROLLER_TANYAO,
         CJ4_WEB_CONTROLLER_TOITOI,
+        CJ4_WEB_CONTROLLER_STANDARD,
         CJ4_WEB_CONTROLLER_COUNT
     } cj4_web_controller;
 
