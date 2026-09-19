@@ -515,7 +515,7 @@ main {
 
 .settlement-winners {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   margin-top: 16px;
 }
@@ -529,6 +529,20 @@ main {
 .settlement-winner-heading .tile {
   width: 34px;
   height: 47px;
+}
+
+.settlement-hand {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.settlement-hand .settlement-indicator-row {
+  flex-wrap: wrap;
+}
+
+.settlement-hand .tiles {
+  flex-wrap: wrap;
 }
 
 .settlement-payment {

@@ -449,6 +449,48 @@ function renderPendingActions() {
     .forEach((action) => buttons.append(createActionButton(action)));
 }
 
+function appendMeldTiles(container, meld) {
+  meld.tiles.forEach((tile, tileIndex) => {
+    const faceDown = meld.type === "ankan"
+      && (tileIndex === 0 || tileIndex === meld.tiles.length - 1);
+    container.append(createTile(
+      faceDown ? "back" : tile,
+      faceDown ? "暗槓の伏せ牌" : `${meld.type}の${tile.tile}`,
+    ));
+  });
+}
+
+function createSettlementHand(result, settlement) {
+  const player = currentState.players.find((item) => item.player === result.player);
+  const section = document.createElement("div");
+  section.className = "settlement-hand";
+  // Nagashi mangan is a draw result, not a completed winning hand.
+  const winningTile = ["ron", "tsumo"].includes(settlement.type)
+    ? settlement.winning_tile : null;
+  const concealed = player.hand.filter((tile) => tile.id !== winningTile?.id);
+  section.append(createSettlementIndicatorRow("手牌", concealed));
+  if (winningTile) {
+    section.append(createSettlementIndicatorRow(
+      settlement.type === "ron" ? "ロン牌" : "ツモ牌", [winningTile],
+    ));
+  }
+  if (player.melds.length) {
+    const row = document.createElement("div");
+    const label = document.createElement("span");
+    row.className = "settlement-indicator-row";
+    label.textContent = "面子";
+    row.append(label);
+    player.melds.forEach((meld) => {
+      const group = document.createElement("div");
+      group.className = "tiles";
+      appendMeldTiles(group, meld);
+      row.append(group);
+    });
+    section.append(row);
+  }
+  return section;
+}
+
 function renderPlayer(player) {
   const panel = document.querySelectorAll(".player-panel")[player.player];
   const discardActions = new Map(
@@ -497,14 +539,7 @@ function renderPlayer(player) {
       separator.className = "meld-break";
       melds.append(separator);
     }
-    meld.tiles.forEach((tile, tileIndex) => {
-      const faceDown = meld.type === "ankan"
-        && (tileIndex === 0 || tileIndex === meld.tiles.length - 1);
-      melds.append(createTile(
-        faceDown ? "back" : tile,
-        faceDown ? "暗槓の伏せ牌" : `${meld.type}の${tile.tile}`,
-      ));
-    });
+    appendMeldTiles(melds, meld);
   });
 
   const discards = panel.querySelector(".discards");
@@ -586,13 +621,7 @@ function renderSettlementWinner(result, settlement) {
 
   identity.append(title, detail);
   heading.append(identity);
-  if (currentState.settlement.winning_tile) {
-    heading.append(createTile(
-      currentState.settlement.winning_tile,
-      `和了牌 ${currentState.settlement.winning_tile.tile}`,
-    ));
-  }
-  card.append(heading, payment, yaku, indicators);
+  card.append(heading, createSettlementHand(result, settlement), payment, yaku, indicators);
   return card;
 }
 
@@ -606,6 +635,7 @@ function renderSettlement() {
     return;
   }
 
+  stopPlayback();
   layer.hidden = false;
   document.querySelector("#settlement-title").textContent = ROUND_RESULT_LABELS[settlement.type] ?? "局終了";
   const summary = document.querySelector("#settlement-summary");
@@ -696,6 +726,10 @@ function renderGameState() {
 
 function stepGame() {
   if (!currentState?.active) return 0;
+  if (["round_end", "settle"].includes(currentState.phase)) {
+    continueAfterSettlement();
+    return 1;
+  }
   const result = wasmModule._cj4_web_game_step();
   currentState = readState();
   if (result === 1) advanceForcedState();
@@ -718,15 +752,22 @@ function playbackStep() {
   currentState = readState();
   const continues = result === 1 && !currentState.waiting_for_input &&
     currentState.phase !== "round_end" && currentState.phase !== "game_end";
+  // Never leave another engine step queued if rendering fails.
+  renderGameState();
   if (continues) {
     const waitMs = Number(document.querySelector("#playback-wait").value);
     playbackTimer = setTimeout(playbackStep, waitMs);
+    updateHistoryControls();
   }
-  renderGameState();
   return result;
 }
 
 function playGame() {
+  if (currentState?.phase === "round_end" &&
+      dismissedSettlementHistory === currentState.history.index) {
+    continueAfterSettlement();
+    return;
+  }
   if (!currentState?.active || currentState.waiting_for_input ||
       currentState.phase === "round_end" || currentState.phase === "game_end" ||
       playbackTimer !== undefined) return;
@@ -735,7 +776,14 @@ function playGame() {
   updateHistoryControls();
 }
 
+function closeSettlement() {
+  stopPlayback();
+  dismissedSettlementHistory = currentState?.history.index ?? -1;
+  renderGameState();
+}
+
 function continueAfterSettlement() {
+  if (!currentState?.active || !["round_end", "settle"].includes(currentState.phase)) return;
   stopPlayback();
   dismissedSettlementHistory = currentState?.history.index ?? -1;
 
@@ -831,10 +879,7 @@ function wireGameControls() {
   });
   document.querySelector("#history-position").addEventListener("input", (event) => rewindGame(event.target.value));
   document.querySelector("#hide-opponent-hands").addEventListener("change", renderGameState);
-  document.querySelector("#settlement-close").addEventListener("click", () => {
-    dismissedSettlementHistory = currentState?.history.index ?? -1;
-    document.querySelector("#settlement-layer").hidden = true;
-  });
+  document.querySelector("#settlement-close").addEventListener("click", closeSettlement);
   document.querySelector("#settlement-next").addEventListener("click", () => {
     continueAfterSettlement();
   });

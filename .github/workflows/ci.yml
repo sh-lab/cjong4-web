@@ -26,6 +26,9 @@ jobs:
       - name: Build
         run: cmake --build build --parallel
 
+      - name: Test browser logic
+        run: node --test tests/test_app.cjs
+
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
