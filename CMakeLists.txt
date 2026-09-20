@@ -7,20 +7,37 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 option(CJ4_WEB_BUILD_TESTS "Build cjong4-web native tests" ON)
 
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/cjong4-opponent/CMakeLists.txt")
-    message(FATAL_ERROR
-        "cjong4-opponent is missing. Run: git submodule update --init --recursive")
-endif()
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/cjong4-mjai/CMakeLists.txt")
-    message(FATAL_ERROR
-        "cjong4-mjai is missing. Run: git submodule update --init --recursive")
-endif()
+set(CJONG4_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../cjong4" CACHE PATH
+    "Path to a cjong4 source tree")
+set(CJ4_WEB_OPPONENT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../cjong4-opponent" CACHE PATH
+    "Path to a cjong4-opponent source tree")
+set(CJ4_WEB_MJAI_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../cjong4-mjai" CACHE PATH
+    "Path to a cjong4-mjai source tree")
 
-set(CJ4_OPPONENT_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(CJ4_OPPONENT_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-add_subdirectory(external/cjong4-opponent EXCLUDE_FROM_ALL)
-set(CJ4_MJAI_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-add_subdirectory(external/cjong4-mjai EXCLUDE_FROM_ALL)
+if(NOT TARGET cjong4::cj4)
+    if(EXISTS "${CJONG4_SOURCE_DIR}/CMakeLists.txt")
+        add_subdirectory("${CJONG4_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/cjong4" EXCLUDE_FROM_ALL)
+    else()
+        find_package(cjong4 4.0.0 CONFIG REQUIRED)
+    endif()
+endif()
+if(NOT TARGET cjong4::opponents)
+    if(EXISTS "${CJ4_WEB_OPPONENT_SOURCE_DIR}/CMakeLists.txt")
+        set(CJ4_OPPONENT_BUILD_EXAMPLES OFF)
+        set(CJ4_OPPONENT_BUILD_TESTS OFF)
+        add_subdirectory("${CJ4_WEB_OPPONENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/opponent" EXCLUDE_FROM_ALL)
+    else()
+        find_package(cjong4-opponent 1.0.4 CONFIG REQUIRED)
+    endif()
+endif()
+if(NOT TARGET cjong4::mjai)
+    if(EXISTS "${CJ4_WEB_MJAI_SOURCE_DIR}/CMakeLists.txt")
+        set(CJ4_MJAI_BUILD_TESTS OFF)
+        add_subdirectory("${CJ4_WEB_MJAI_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/mjai" EXCLUDE_FROM_ALL)
+    else()
+        find_package(cjong4-mjai CONFIG REQUIRED)
+    endif()
+endif()
 
 set(CJ4_WEB_SOURCES
     src/game_session.c

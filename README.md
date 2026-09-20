@@ -81,11 +81,12 @@ API version 5では、ルール設定のフィールド番号8に`four_kans_abor
 
 ## 準備
 
-サブモジュールを初期化します。
-
-```sh
-git submodule update --init --recursive
-```
+[cjong4-workspace](https://github.com/sh-lab/cjong4-workspace) 内では、横並びの
+`../cjong4`・`../cjong4-opponent`・`../cjong4-mjai` を使用します。内部サブモジュールはありません。
+単体でcloneする場合は、これらの互換ソースを隣に配置してください。
+別の場所にあるソースはCMakeの `CJONG4_SOURCE_DIR`・`CJ4_WEB_OPPONENT_SOURCE_DIR`・
+`CJ4_WEB_MJAI_SOURCE_DIR` で指定できます。`scripts/build-wasm.sh` にも `-D...` を渡せます。
+親のCMakeに定義済みのターゲット、またはインストール済みのCMakeパッケージも利用できます。
 
 emsdkを有効化してからビルドします。
 

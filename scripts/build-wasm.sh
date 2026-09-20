@@ -20,7 +20,7 @@ elif ! command -v emcmake >/dev/null 2>&1; then
 fi
 
 emcmake cmake -S "$PROJECT_DIR" -B "$PROJECT_DIR/build-wasm" \
-    -DCJ4_WEB_BUILD_TESTS=OFF
+    -DCJ4_WEB_BUILD_TESTS=OFF "$@"
 cmake --build "$PROJECT_DIR/build-wasm" --parallel
 
 echo "Built browser files: $PROJECT_DIR/build-wasm/site"
