@@ -99,4 +99,5 @@ jobs:
           emcmake cmake -S deps/cjong4 -B deps/core-build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/deps/install"
           cmake --build deps/core-build --parallel
           cmake --install deps/core-build
-          ./scripts/build-wasm.sh -DCJONG4_SOURCE_DIR= -DCJ4_OPPONENT_USE_SYSTEM_CJONG4=ON -DCMAKE_PREFIX_PATH="$PWD/deps/install" -DCJ4_WEB_OPPONENT_SOURCE_DIR="$PWD/deps/cjong4-opponent" -DCJ4_WEB_MJAI_SOURCE_DIR="$PWD/deps/cjong4-mjai"
+          # Emscripten searches packages only inside its cross-compilation roots.
+          ./scripts/build-wasm.sh -DCJONG4_SOURCE_DIR= -DCJ4_OPPONENT_USE_SYSTEM_CJONG4=ON -DCMAKE_PREFIX_PATH="$PWD/deps/install" -DCMAKE_FIND_ROOT_PATH="$PWD/deps/install" -DCJ4_WEB_OPPONENT_SOURCE_DIR="$PWD/deps/cjong4-opponent" -DCJ4_WEB_MJAI_SOURCE_DIR="$PWD/deps/cjong4-mjai"
